@@ -83,16 +83,7 @@ public class PassengerMapActivity extends AppCompatActivity implements OnMapRead
     }
 
     private void getPrevIntentData() {
-        if (getIntent().getStringExtra("mode").equals("seat")) {
-            seatNo = getIntent().getStringExtra("seatNo");
-            tripId = getIntent().getStringExtra("tripId");
-            pickUpLatLng = new LatLng(Double.parseDouble(getIntent().getStringExtra("lat")), Double.parseDouble(getIntent().getStringExtra("lng")));
-            cameraLatLng = pickUpLatLng;
-        } else {
-            tripId = getIntent().getStringExtra("tripId");
-            uvLatLng = new LatLng(Double.parseDouble(getIntent().getStringExtra("lat")), Double.parseDouble(getIntent().getStringExtra("lng")));
-            cameraLatLng = uvLatLng;
-        }
+        cameraLatLng = uvLatLng;
     }
 
     // ---------------------------------------------------------------------------------------------

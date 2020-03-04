@@ -6,7 +6,7 @@ import com.google.android.gms.maps.model.LatLng;
 
 public class Seat {
     private TextView txtSeat;
-    public LatLng pickUpLatLng;
+    private LatLng pickUpLatLng;
     private String status;
     private String seatNo;
 
@@ -42,4 +42,5 @@ public class Seat {
     public String getSeatNo() {
         return seatNo;
     }
+
 }

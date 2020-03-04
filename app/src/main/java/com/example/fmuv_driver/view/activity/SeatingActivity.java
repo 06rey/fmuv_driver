@@ -294,10 +294,12 @@ public class SeatingActivity extends AppCompatActivity {
                             seat.getTxtSeat().setBackgroundColor(getResources().getColor(R.color.yellow));
                             break;
                     }
-                    double lat = Double.parseDouble(list.get(i).get("pick_lat"));
-                    double lng = Double.parseDouble(list.get(i).get("pick_lng"));
-                    LatLng latLng = new LatLng(lat, lng);
-                    seat.setPickUpLatLng(latLng);
+                    if (!list.get(i).get("pick_lat").equals("null")) {
+                        double lat = Double.parseDouble(list.get(i).get("pick_lat"));
+                        double lng = Double.parseDouble(list.get(i).get("pick_lng"));
+                        LatLng latLng = new LatLng(lat, lng);
+                        seat.setPickUpLatLng(latLng);
+                    }
                     break;
                 }
                 if (i == len-1) {
@@ -308,25 +310,38 @@ public class SeatingActivity extends AppCompatActivity {
         }
     }
 
+    // ---------------------------------------------------------------------------------------------
+    // ------------------------------------------ HELPER  ------------------------------------------
+    // ---------------------------------------------------------------------------------------------
+
+
     // Function to call PassengerMapActivity
 
     // Called by clicking view pickup button showing seat passenger pick up map
     private void passengerMap(Seat seat) {
         Intent intent = new Intent(SeatingActivity.this, PassengerMapActivity.class);
-        intent.putExtra("mode", "seat");
-        intent.putExtra("seatNo", seat.getSeatNo());
-        intent.putExtra("tripId", tripId);
-        intent.putExtra("seatLatLng", seat.getPickUpLatLng());
         startActivity(intent);
     }
     //  Called by clicking passenger map button, showing all passenger pick up map
     private void passengerMapAll() {
         Intent intent = new Intent(SeatingActivity.this, PassengerMapActivity.class);
-        intent.putExtra("mode", "all");
-        intent.putExtra("tripId", tripId);
-        intent.putExtra("lat", "11.204087035730481");
-        intent.putExtra("lng", "125.01068651676178");
         startActivity(intent);
+    }
+
+    private List<Map<String, String>> objectToMap() {
+        List<Map<String, String>> mapList = new ArrayList<>();
+        for (Seat seat: seatList) {
+            Map<String, String> seatMap = new HashMap<>();
+            seatMap.put("seatNo", seat.getSeatNo());
+            if (seat.getPickUpLatLng() != null) {
+                seatMap.put("lat", String.valueOf(seat.getPickUpLatLng().latitude));
+                seatMap.put("lng", String.valueOf(seat.getPickUpLatLng().longitude));
+            } else {
+                seatMap.put("lat", null);
+                seatMap.put("lng", null);
+            }
+        }
+        return  mapList;
     }
 
 

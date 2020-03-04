@@ -27,6 +27,7 @@ import com.example.fmuv_driver.utility.CheckInternet;
 import com.example.fmuv_driver.view.activity.OverSpeedDialogActivity;
 import com.example.fmuv_driver.view.activity.SeatReservationDialogActivity;
 import com.example.fmuv_driver.view.activity.TripManagerActivity;
+import com.google.android.gms.maps.model.LatLng;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -59,6 +60,7 @@ public class Speedometer extends Service implements LocationListener {
     private AppNotification appNotification;
     private DbHelper db;
 
+    private LatLng latLng1, latLng2;
     private AppUtil appUtil = new AppUtil();
 
     private ServerEventModel serverEventModel;
@@ -253,6 +255,13 @@ public class Speedometer extends Service implements LocationListener {
         updateLocation(location);
         // Broadcast location to other activity
         broadcastLocation(String.valueOf(location.getLatitude()), String.valueOf(location.getLongitude()));
+        double tempDist;
+        if (latLng1 != null) {
+            latLng2 = new LatLng(location.getLatitude(), location.getLongitude());
+            tempDist = appUtil.getDistance(latLng1, latLng2);
+            Toast.makeText(getApplicationContext(), "tempDist" + String.valueOf(tempDist), Toast.LENGTH_SHORT).show();
+        }
+        latLng1 = new LatLng(location.getLatitude(), location.getLongitude());
         // Check if Uv Express is overspeeding
         if (speed > SPEED_LIMIT) {
             speedStr = String.format("%.1f", Float.parseFloat(speedStr));

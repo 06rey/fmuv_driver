@@ -18,7 +18,8 @@ public class AppUtil {
         dist = Math.acos(dist);
         dist = rad2deg(dist);
         dist = dist * 60 * 1.1515;
-        return (dist);
+        // return in KM
+        return (dist/1000);
     }
 
     private double deg2rad(double deg) {
