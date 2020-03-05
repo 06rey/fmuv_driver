@@ -30,6 +30,8 @@ import com.example.fmuv_driver.view.activity.TripManagerActivity;
 import com.google.android.gms.maps.model.LatLng;
 
 import java.io.IOException;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +62,8 @@ public class Speedometer extends Service implements LocationListener {
     private AppNotification appNotification;
     private DbHelper db;
 
-    private LatLng latLng1, latLng2;
+    private long prevMillis = 0;
+    private Location prevLocation = null;
     private AppUtil appUtil = new AppUtil();
 
     private ServerEventModel serverEventModel;
@@ -255,13 +258,24 @@ public class Speedometer extends Service implements LocationListener {
         updateLocation(location);
         // Broadcast location to other activity
         broadcastLocation(String.valueOf(location.getLatitude()), String.valueOf(location.getLongitude()));
-        double tempDist;
-        if (latLng1 != null) {
-            latLng2 = new LatLng(location.getLatitude(), location.getLongitude());
-            tempDist = appUtil.getDistance(latLng1, latLng2);
-            Toast.makeText(getApplicationContext(), "tempDist" + String.valueOf(tempDist), Toast.LENGTH_SHORT).show();
+
+        if (prevLocation != null) {
+            long currentMillis = Calendar.getInstance().getTimeInMillis();
+            Log.d("DebugLog", "PREV MILLIS: " + String.valueOf(prevMillis));
+            Log.d("DebugLog", "CURRENT MILLIS: " + String.valueOf(currentMillis));
+            float distance = appUtil.getDistance(prevLocation, location);
+            Log.d("DebugLog", "DISTANCE: " + String.valueOf(distance));
+            float time = ((currentMillis - prevMillis)/60)/60;
+            Log.d("DebugLog", "(("+ String.valueOf(currentMillis) +"-"+ String.valueOf(prevMillis) +")/60)/60 = "+ String.valueOf(time));
+            Log.d("DebugLog", "TIME: " + String.valueOf(time));
+            float uvSpeed = distance/time;
+            Log.d("DebugLog", "SPPED: " + String.valueOf(uvSpeed));
+
+            Toast.makeText(getApplicationContext(), "SPEED: "+ String.valueOf(uvSpeed), Toast.LENGTH_SHORT).show();
         }
-        latLng1 = new LatLng(location.getLatitude(), location.getLongitude());
+        prevLocation = location;
+        prevMillis = Calendar.getInstance().getTimeInMillis();
+
         // Check if Uv Express is overspeeding
         if (speed > SPEED_LIMIT) {
             speedStr = String.format("%.1f", Float.parseFloat(speedStr));

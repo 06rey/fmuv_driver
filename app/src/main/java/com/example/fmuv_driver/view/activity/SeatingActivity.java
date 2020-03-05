@@ -44,6 +44,8 @@ public class SeatingActivity extends AppCompatActivity {
     private boolean isServerEventRunning = false;
     private String lat, lng, tripId, status;
 
+    private BroadcastReceiver broadcastReceiver, internetStatusBroadcastReceiver;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -53,39 +55,6 @@ public class SeatingActivity extends AppCompatActivity {
         this.prepareSeats();
         this.setViewModelObserver();
 
-        BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String action = intent.getAction();
-                if (action.equalsIgnoreCase(Speedometer.BROADCAST_ID)) {
-                    Bundle extra = intent.getExtras();
-                    lat = extra.getString("lat");
-                    lng = extra.getString("lng");
-                    Toast.makeText(getApplicationContext(), "UV EXPRESS LOCATION RECEIVE", Toast.LENGTH_SHORT).show();
-                }
-            }
-        };
-        registerReceiver(broadcastReceiver, new IntentFilter("LOCATION"));
-
-        BroadcastReceiver internetStatusBroadcastReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String action = intent.getAction();
-                if (action.equalsIgnoreCase(Speedometer.BROADCAST_INTERNET_STATUS)) {
-                    Bundle extra = intent.getExtras();
-                    boolean isOnline = extra.getBoolean("isOnline");
-                    TextView txtOnlineStatus = findViewById(R.id.txtOnlineStatus);
-                    if (isOnline) {
-                        txtOnlineStatus.setText("ONLINE");
-                        txtOnlineStatus.setTextColor(getResources().getColor(R.color.green));
-                    } else {
-                        txtOnlineStatus.setText("OFFLINE");
-                        txtOnlineStatus.setTextColor(getResources().getColor(R.color.red));
-                    }
-                }
-            }
-        };
-        registerReceiver(internetStatusBroadcastReceiver, new IntentFilter("BROADCAST_INTERNET_STATUS"));
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -106,7 +75,6 @@ public class SeatingActivity extends AppCompatActivity {
         btnPassengerMap = findViewById(R.id.btnPassengerMap);
 
         setViewListener();
-        getSeatInfo(true);
     }
 
     private void prepareSeats() {
@@ -178,6 +146,7 @@ public class SeatingActivity extends AppCompatActivity {
         data.put("seat_no", seat.getSeatNo());
         data.put("lat", lat);
         data.put("lng", lng);
+        data.put("booking_id", seat.getBookingId());
         data.put("trip_id", tripId);
         viewModel.okHttpRequest(data, "GET", "");
 
@@ -225,11 +194,18 @@ public class SeatingActivity extends AppCompatActivity {
             Button btn2 = view.findViewById(R.id.btn2);
             Button btnViewInMap = view.findViewById(R.id.btnViewInMap);
 
+            alertBuilder.setTitle("Select action for seat no. " + seat.getSeatNo())
+                    .setView(view)
+                    .setCancelable(false);
+            dialog = alertBuilder.create();
+            dialog.show();
+
             if (seat.getStatus().equals("booked")) {
                 btn1.setText("Pick Passenger");
                 btnViewInMap.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
+                        dialog.dismiss();
                         passengerMap(seat);
                     }
                 });
@@ -239,12 +215,6 @@ public class SeatingActivity extends AppCompatActivity {
             } else if (seat.getStatus().equals("available")) {
                 btn1.setText("Mark Occupied");
             }
-
-            alertBuilder.setTitle("Select action for seat no. " + seat.getSeatNo())
-                    .setView(view)
-                    .setCancelable(false);
-            dialog = alertBuilder.create();
-            dialog.show();
 
             btn1.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -300,6 +270,7 @@ public class SeatingActivity extends AppCompatActivity {
                         LatLng latLng = new LatLng(lat, lng);
                         seat.setPickUpLatLng(latLng);
                     }
+                    seat.setBookingId(list.get(i).get("booking_id"));
                     break;
                 }
                 if (i == len-1) {
@@ -314,36 +285,38 @@ public class SeatingActivity extends AppCompatActivity {
     // ------------------------------------------ HELPER  ------------------------------------------
     // ---------------------------------------------------------------------------------------------
 
-
     // Function to call PassengerMapActivity
 
     // Called by clicking view pickup button showing seat passenger pick up map
     private void passengerMap(Seat seat) {
         Intent intent = new Intent(SeatingActivity.this, PassengerMapActivity.class);
+        intent.putExtra("seatNo1", seat.getSeatNo());
+        intent.putExtra("seatLat1", String.valueOf(seat.getPickUpLatLng().latitude));
+        intent.putExtra("seatLng1", String.valueOf(seat.getPickUpLatLng().longitude));
+        intent.putExtra("seatBookingId1", seat.getBookingId());
+        intent.putExtra("tripId", tripId);
+        intent.putExtra("size", 1);
+        intent.putExtra("mode", "single");
         startActivity(intent);
     }
     //  Called by clicking passenger map button, showing all passenger pick up map
     private void passengerMapAll() {
         Intent intent = new Intent(SeatingActivity.this, PassengerMapActivity.class);
-        startActivity(intent);
-    }
-
-    private List<Map<String, String>> objectToMap() {
-        List<Map<String, String>> mapList = new ArrayList<>();
+        int key = 0;
         for (Seat seat: seatList) {
-            Map<String, String> seatMap = new HashMap<>();
-            seatMap.put("seatNo", seat.getSeatNo());
             if (seat.getPickUpLatLng() != null) {
-                seatMap.put("lat", String.valueOf(seat.getPickUpLatLng().latitude));
-                seatMap.put("lng", String.valueOf(seat.getPickUpLatLng().longitude));
-            } else {
-                seatMap.put("lat", null);
-                seatMap.put("lng", null);
+                key++;
+                intent.putExtra("seatNo"+String.valueOf(key), seat.getSeatNo());
+                intent.putExtra("seatBookingId"+String.valueOf(key), seat.getBookingId());
+                intent.putExtra("seatLat"+String.valueOf(key), String.valueOf(seat.getPickUpLatLng().latitude));
+                intent.putExtra("seatLng"+String.valueOf(key), String.valueOf(seat.getPickUpLatLng().longitude));
             }
         }
-        return  mapList;
+        intent.putExtra("tripId", tripId);
+        intent.putExtra("size", key);
+        intent.putExtra("mode", "all");
+        startActivity(intent);
     }
-
 
     // ---------------------------------------------------------------------------------------------
     // --------------------------------- NETWORK CALL FUNCTIONS  -----------------------------------
@@ -354,7 +327,6 @@ public class SeatingActivity extends AppCompatActivity {
         viewModel.getServerSentData().observe(this, new Observer<List<Map<String, String>>>() {
             @Override
             public void onChanged(List<Map<String, String>> list) {
-                Log.d("DebugLog", list.toString());
                 seatInfo(list);
             }
         });
@@ -443,11 +415,53 @@ public class SeatingActivity extends AppCompatActivity {
     // ----------------------------------- THIS OVERRIDE METHOD  -----------------------------------
     // ---------------------------------------------------------------------------------------------
 
+
+    @Override
+    protected void onPostResume() {
+        getSeatInfo(true);
+        broadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+                if (action.equalsIgnoreCase(Speedometer.BROADCAST_ID)) {
+                    Bundle extra = intent.getExtras();
+                    lat = extra.getString("lat");
+                    lng = extra.getString("lng");
+                    Toast.makeText(getApplicationContext(), "UV EXPRESS LOCATION RECEIVE", Toast.LENGTH_SHORT).show();
+                }
+            }
+        };
+        registerReceiver(broadcastReceiver, new IntentFilter("LOCATION"));
+
+        internetStatusBroadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+                if (action.equalsIgnoreCase(Speedometer.BROADCAST_INTERNET_STATUS)) {
+                    Bundle extra = intent.getExtras();
+                    boolean isOnline = extra.getBoolean("isOnline");
+                    TextView txtOnlineStatus = findViewById(R.id.txtOnlineStatus);
+                    if (isOnline) {
+                        txtOnlineStatus.setText("ONLINE");
+                        txtOnlineStatus.setTextColor(getResources().getColor(R.color.green));
+                    } else {
+                        txtOnlineStatus.setText("OFFLINE");
+                        txtOnlineStatus.setTextColor(getResources().getColor(R.color.red));
+                    }
+                }
+            }
+        };
+        registerReceiver(internetStatusBroadcastReceiver, new IntentFilter("BROADCAST_INTERNET_STATUS"));
+        super.onPostResume();
+    }
+
     @Override
     protected void onPause() {
         if (isServerEventRunning) {
             viewModel.closeServerEventConnection();
         }
+        unregisterReceiver(internetStatusBroadcastReceiver);
+        unregisterReceiver(broadcastReceiver);
         getViewModelStore().clear();
         isServerEventRunning = false;
         super.onPause();

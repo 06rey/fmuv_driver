@@ -4,16 +4,22 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
 
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.example.fmuv_driver.R;
+import com.example.fmuv_driver.model.pojo.Seat;
 import com.example.fmuv_driver.service.Speedometer;
+import com.example.fmuv_driver.view.view_helper.ViewHelper;
 import com.example.fmuv_driver.view_model.AppViewModel;
 import com.example.fmuv_driver.model.pojo.RouteItem;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -35,15 +41,20 @@ import java.util.Map;
 
 public class PassengerMapActivity extends AppCompatActivity implements OnMapReadyCallback {
     // MISC
-    private String seatNo, tripId;
+    private String seatNo, tripId = "1";
     private boolean isRouteLineSet = false, isMapIsReady = false;
+    private List<String> bookingIdList = new ArrayList<>();
     // MAP
     private GoogleMap googleMap;
     // OBJECT
     private AppViewModel viewModel;
     private List<RouteItem> routeItemList = new ArrayList<>();
-    private LatLng uvLatLng, pickUpLatLng, cameraLatLng;
+    private LatLng uvLatLng = null, pickUpLatLng, cameraLatLng;
     private Marker uvExpressMarker;
+    private List<Seat> seatList = new ArrayList<>();
+    private ViewHelper viewHelper;
+
+    private  BroadcastReceiver broadcastReceiver;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -63,27 +74,77 @@ public class PassengerMapActivity extends AppCompatActivity implements OnMapRead
     // ---------------------------------------------------------------------------------------------
 
     private void initializeAll() {
-        BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String action = intent.getAction();
-                if (action.equalsIgnoreCase(Speedometer.BROADCAST_ID)) {
-                    Bundle extra = intent.getExtras();
-                    uvLatLng = new LatLng(Double.parseDouble(extra.getString("lat")), Double.parseDouble(extra.getString("lng")));
-                    if (isMapIsReady) {
-                        setUvLocation();
-                    }
-                }
-            }
-        };
-        registerReceiver(broadcastReceiver, new IntentFilter("LOCATION"));
-
         getPrevIntentData();
         setViewModelObserver();
+        viewHelper = new ViewHelper(this);
     }
 
     private void getPrevIntentData() {
-        cameraLatLng = uvLatLng;
+        int extraSize = getIntent().getIntExtra("size", 0);
+        for (int i=1; i<=extraSize; i++) {
+            Seat seat = new Seat();
+            seat.setSeatNo(getIntent().getStringExtra("seatNo"+String.valueOf(i)));
+            seat.setBookingId(getIntent().getStringExtra("seatBookingId"+String.valueOf(i)));
+            double lat = Double.parseDouble(getIntent().getStringExtra("seatLat"+String.valueOf(i)));
+            double lng = Double.parseDouble(getIntent().getStringExtra("seatLng"+String.valueOf(i)));
+            seat.setPickUpLatLng(new LatLng(lat, lng));
+            seatList.add(seat);
+        }
+        tripId = getIntent().getStringExtra("tripId");
+        if (getIntent().getStringExtra("mode").equals("all")) {
+            cameraLatLng = uvLatLng;
+        } else {
+            cameraLatLng = seatList.get(0).getPickUpLatLng();
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // --------------------------------------- DIALOG ACTION  --------------------------------------
+    // ---------------------------------------------------------------------------------------------
+
+    private void setDialogAction(final Seat seat) {
+        final AlertDialog dialog;
+        AlertDialog.Builder alertBuilder = new AlertDialog.Builder(this, R.style.MyAlertDialogStyle);
+        View view = LayoutInflater.from(this).inflate(R.layout.seat_action_dialog, null);
+        Button btn1 = view.findViewById(R.id.btn1);
+        Button btn2 = view.findViewById(R.id.btn2);
+
+        btn1.setText("Pick Passenger");
+        alertBuilder.setTitle("Select action for seat no. " + seat.getSeatNo())
+                .setView(view)
+                .setCancelable(false);
+        dialog = alertBuilder.create();
+        dialog.show();
+
+        btn1.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                pickPassenger(seat);
+                dialog.dismiss();
+            }
+        });
+
+        btn2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
+    }
+
+    private void pickPassenger(Seat seat) {
+        seat.getMarker().remove();
+        Map<String, String> data = new HashMap<>();
+        data.put("resp", "0");
+        data.put("main", "trip");
+        data.put("sub", "pick_passenger");
+        data.put("seat_no", seat.getSeatNo());
+        data.put("lat", String.valueOf(seat.getPickUpLatLng().latitude));
+        data.put("lng", String.valueOf(seat.getPickUpLatLng().longitude));
+        data.put("trip_id", tripId);
+        data.put("booking_id", seat.getBookingId());
+        viewModel.okHttpRequest(data, "GET", "");
+        viewHelper.showMessage("Success", "Successfully picked up passenger.");
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -106,15 +167,51 @@ public class PassengerMapActivity extends AppCompatActivity implements OnMapRead
     public void onMapReady(GoogleMap googleMap) {
         this.googleMap = googleMap;
         isMapIsReady = true;
+
+        // Set googleMap marker click listener
+        googleMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+                String title = marker.getTitle();
+                if (title.contains("Seat")) {
+                    for (Seat seat: seatList) {
+                        if (title.equals(seat.getMarkerTitle())) {
+                            setDialogAction(seat);
+                        }
+                    }
+                }
+                return false;
+            }
+        });
+
         getRoute();
+        setPassengerMarker();
     }
 
-    private void showSinglePickUpPoint() {
-
-    }
-
-    private void showAllPickUpLocation() {
-
+    private void setPassengerMarker() {
+        int bookNum = 1;
+        for (Seat seat: seatList) {
+            boolean exists = false;
+            for(String val: bookingIdList) {
+                if (val.equals(seat.getBookingId())) {
+                    exists = true;
+                    break;
+                }
+            }
+            if (!exists) {
+                Marker passengerMarker;
+                BitmapDescriptor icon = BitmapDescriptorFactory.fromResource(R.drawable.map_pin);
+                MarkerOptions markerOptions = new MarkerOptions()
+                        .title("Booking no."+String.valueOf(bookNum)+" pick up location")
+                        .position(seat.getPickUpLatLng())
+                        .icon(icon);
+                passengerMarker = googleMap.addMarker(markerOptions);
+                seat.setMarker(passengerMarker);
+                seat.setMarkerTitle(passengerMarker.getTitle());
+                bookingIdList.add(seat.getBookingId());
+                bookNum++;
+            }
+        }
     }
 
     private void setRouteMapLine(List<Map<String, String>> list) {
@@ -135,26 +232,30 @@ public class PassengerMapActivity extends AppCompatActivity implements OnMapRead
 
         setUvLocation();
 
-       CameraPosition googlePlex = CameraPosition.builder()
-                .target(cameraLatLng)
-                .zoom(15)
-                .bearing(0)
-                .tilt(0)
-                .build();
+        if (cameraLatLng != null) {
+            CameraPosition googlePlex = CameraPosition.builder()
+                    .target(cameraLatLng)
+                    .zoom(15)
+                    .bearing(0)
+                    .tilt(0)
+                    .build();
 
-        googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(googlePlex), 1000, null);
+            googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(googlePlex), 1000, null);
+        }
     }
 
     public void setUvLocation() {
         if (uvExpressMarker != null) {
             uvExpressMarker.remove();
         }
-        BitmapDescriptor icon = BitmapDescriptorFactory.fromResource(R.drawable.van_marker);
-        MarkerOptions vanMark = new MarkerOptions()
-                .title("UV Express Location")
-                .position(uvLatLng)
-                .icon(icon);
-        uvExpressMarker = googleMap.addMarker(vanMark);
+        if (uvLatLng != null) {
+            BitmapDescriptor icon = BitmapDescriptorFactory.fromResource(R.drawable.van_marker);
+            MarkerOptions vanMark = new MarkerOptions()
+                    .title("UV Express Location")
+                    .position(uvLatLng)
+                    .icon(icon);
+            uvExpressMarker = googleMap.addMarker(vanMark);
+        }
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -214,5 +315,35 @@ public class PassengerMapActivity extends AppCompatActivity implements OnMapRead
 
             }
         });
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // ----------------------------------- THIS OVERRIDE METHOD  -----------------------------------
+    // ---------------------------------------------------------------------------------------------
+
+
+    @Override
+    protected void onPostResume() {
+        broadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+                if (action.equalsIgnoreCase(Speedometer.BROADCAST_ID)) {
+                    Bundle extra = intent.getExtras();
+                    uvLatLng = new LatLng(Double.parseDouble(extra.getString("lat")), Double.parseDouble(extra.getString("lng")));
+                    if (isMapIsReady) {
+                        setUvLocation();
+                    }
+                }
+            }
+        };
+        registerReceiver(broadcastReceiver, new IntentFilter("LOCATION"));
+        super.onPostResume();
+    }
+
+    @Override
+    protected void onPause() {
+        unregisterReceiver(broadcastReceiver);
+        super.onPause();
     }
 }
