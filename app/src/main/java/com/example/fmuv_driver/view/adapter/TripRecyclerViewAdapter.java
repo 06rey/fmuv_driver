@@ -12,6 +12,7 @@ import com.example.fmuv_driver.R;
 import com.example.fmuv_driver.model.BackgroundHttpRequest;
 import com.example.fmuv_driver.model.SharedPref;
 import com.example.fmuv_driver.model.pojo.Trip;
+import com.example.fmuv_driver.service.Speedometer;
 import com.example.fmuv_driver.view.activity.SeatingActivity;
 
 import java.util.HashMap;
@@ -44,7 +45,7 @@ public class TripRecyclerViewAdapter extends RecyclerView.Adapter<TripRecyclerVi
 
     @Override
     public void onBindViewHolder(@NonNull final ViewHolder holder, int position) {
-        Trip trip = tripList.get(position);
+        final Trip trip = tripList.get(position);
         final String tripId = trip.getTripId();
         final String destination =  trip.getDestination();
         holder.date.setText(trip.getDate());
@@ -59,7 +60,7 @@ public class TripRecyclerViewAdapter extends RecyclerView.Adapter<TripRecyclerVi
 
         if (trip.getStatus().equals("Traveling")) {
             holder.btnStart.setEnabled(false);
-            holder.btnStart.setText("Traveling...");
+            holder.btnStart.setText("Arrived");
             holder.btnStart.setBackgroundColor(context.getResources().getColor(R.color.green));
         } else {
             holder.btnStart.setOnClickListener(new View.OnClickListener() {
@@ -76,11 +77,22 @@ public class TripRecyclerViewAdapter extends RecyclerView.Adapter<TripRecyclerVi
                     data.put("trip_id", tripId);
                     status = "Traveling";
                     new BackgroundHttpRequest(null).okHttpRequest(context ,data, "GET", "");
+
+                    Intent intent = new Intent(context, Speedometer.class);
+                    intent.putExtra("tripId", trip.getTripId());
+                    intent.putExtra("destination", trip.getDestination());
+                    SharedPref sharedPref = new SharedPref(context, "loginSession");
+                    sharedPref.setValue("tripId", data.get("trip_id"));
+                    sharedPref.setValue("tripState", data.get("Traveling"));
+                    context.startService(intent);
                 }
             });
 
         }
         status = trip.getStatus();
+        if (status.equals("Arrived")) {
+            holder.btnSeat.setEnabled(false);
+        }
         holder.btnSeat.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

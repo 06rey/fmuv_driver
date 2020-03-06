@@ -14,11 +14,14 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.fmuv_driver.R;
 import com.example.fmuv_driver.model.pojo.Seat;
 import com.example.fmuv_driver.service.Speedometer;
+import com.example.fmuv_driver.utility.AppUtil;
 import com.example.fmuv_driver.view.view_helper.ViewHelper;
 import com.example.fmuv_driver.view_model.AppViewModel;
 import com.example.fmuv_driver.model.pojo.RouteItem;
@@ -53,6 +56,7 @@ public class PassengerMapActivity extends AppCompatActivity implements OnMapRead
     private Marker uvExpressMarker;
     private List<Seat> seatList = new ArrayList<>();
     private ViewHelper viewHelper;
+    private AppUtil appUtil = new AppUtil();
 
     private  BroadcastReceiver broadcastReceiver;
     @Override
@@ -110,8 +114,7 @@ public class PassengerMapActivity extends AppCompatActivity implements OnMapRead
         Button btn2 = view.findViewById(R.id.btn2);
 
         btn1.setText("Pick Passenger");
-        alertBuilder.setTitle("Select action for seat no. " + seat.getSeatNo())
-                .setView(view)
+        alertBuilder.setView(view)
                 .setCancelable(false);
         dialog = alertBuilder.create();
         dialog.show();
@@ -173,10 +176,15 @@ public class PassengerMapActivity extends AppCompatActivity implements OnMapRead
             @Override
             public boolean onMarkerClick(Marker marker) {
                 String title = marker.getTitle();
-                if (title.contains("Seat")) {
+                if (title.contains("Booking")) {
                     for (Seat seat: seatList) {
                         if (title.equals(seat.getMarkerTitle())) {
-                            setDialogAction(seat);
+                            float distance = appUtil.computeDistance(uvLatLng, seat.getPickUpLatLng(), routeItemList.get(0).getPolyLineOption());
+                            if (distance > 0) {
+                                setDialogAction(seat);
+                            } else {
+                                viewHelper.showMessage("Message", "You missed to pick up the passenger.");
+                            }
                         }
                     }
                 }
@@ -330,7 +338,7 @@ public class PassengerMapActivity extends AppCompatActivity implements OnMapRead
                 String action = intent.getAction();
                 if (action.equalsIgnoreCase(Speedometer.BROADCAST_ID)) {
                     Bundle extra = intent.getExtras();
-                    uvLatLng = new LatLng(Double.parseDouble(extra.getString("lat")), Double.parseDouble(extra.getString("lng")));
+                    uvLatLng = new LatLng(11.235080573576141, 124.98715852463721);//new LatLng(Double.parseDouble(extra.getString("lat")), Double.parseDouble(extra.getString("lng")));
                     if (isMapIsReady) {
                         setUvLocation();
                     }

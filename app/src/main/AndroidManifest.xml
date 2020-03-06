@@ -46,7 +46,7 @@
             android:screenOrientation="portrait"
             android:theme="@style/ThemeDialog" />
         <activity
-            android:name=".view.activity.SeatReservationDialogActivity"
+            android:name=".view.activity.MessageDialogActivity"
             android:excludeFromRecents="true"
             android:screenOrientation="portrait"
             android:theme="@style/ThemeDialog" />

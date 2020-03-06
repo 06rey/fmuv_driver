@@ -20,18 +20,17 @@ import android.widget.Toast;
 import com.example.fmuv_driver.handler.ServiceServerEventResponseHandler;
 import com.example.fmuv_driver.model.BackgroundHttpRequest;
 import com.example.fmuv_driver.model.ServerEventModel;
+import com.example.fmuv_driver.model.SharedPref;
 import com.example.fmuv_driver.model.database.DbHelper;
 import com.example.fmuv_driver.utility.AppNotification;
 import com.example.fmuv_driver.utility.AppUtil;
 import com.example.fmuv_driver.utility.CheckInternet;
 import com.example.fmuv_driver.view.activity.OverSpeedDialogActivity;
-import com.example.fmuv_driver.view.activity.SeatReservationDialogActivity;
+import com.example.fmuv_driver.view.activity.MessageDialogActivity;
 import com.example.fmuv_driver.view.activity.TripManagerActivity;
-import com.google.android.gms.maps.model.LatLng;
 
 import java.io.IOException;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,6 +65,8 @@ public class Speedometer extends Service implements LocationListener {
     private Location prevLocation = null;
     private AppUtil appUtil = new AppUtil();
 
+    private Location uvLocation = new Location("");
+
     private ServerEventModel serverEventModel;
     private ServiceServerEventResponseHandler serviceServerEventResponseHandler = new ServiceServerEventResponseHandler();
 
@@ -94,7 +95,7 @@ public class Speedometer extends Service implements LocationListener {
     }
 
     private void initialize() {
-        syncReservationRequest();
+        get_pick_up();
     }
 
     @Override
@@ -192,22 +193,11 @@ public class Speedometer extends Service implements LocationListener {
         Map<String, String> data = new HashMap<>();
         String lat = String.valueOf(location.getLatitude());
         String lng = String.valueOf(location.getLongitude());
-        data.put("resp", "0");
+        data.put("resp", "1");
         data.put("main", "trip");
         data.put("sub", "update_location");
         data.put("lat", lat);
         data.put("lng", lng);
-        data.put("trip_id", tripId);
-
-        new BackgroundHttpRequest(null).okHttpRequest(getApplicationContext(), data, "GET", UPDATE_LOCATION);
-    }
-
-    private void syncReservationRequest() {
-        Map<String, String> data = new HashMap<>();
-        data.put("resp", "1");
-        data.put("main", "trip");
-        data.put("sub", "sync_reservation_request");
-        data.put("mode", "sync_request");
         data.put("trip_id", tripId);
 
         ServiceServerEventResponseHandler serviceServerEventResponseHandler = new ServiceServerEventResponseHandler();
@@ -216,9 +206,40 @@ public class Speedometer extends Service implements LocationListener {
             public void onServiceServerEventResponse(List<Map<String, String>> list) {
                 String status = list.get(0).get("status");
                 if (status.equals("1")) {
-                    setNotificationDialog("", "", list);
+                    // if distance to destination is < 100 meters
+                    new SharedPref(getApplicationContext(), "loginSession").setValue("tripState", "Arrived");
+                    Intent dialogIntent = new Intent(getApplicationContext(), MessageDialogActivity.class);
+                    dialogIntent.putExtra("msg", "You have reached your destination. ");
+                    dialogIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(dialogIntent);
                 }
+            }
+        });
 
+        new BackgroundHttpRequest(serviceServerEventResponseHandler).okHttpRequest(getApplicationContext(), data, "GET", UPDATE_LOCATION);
+    }
+
+    private void get_pick_up() {
+        Map<String, String> data = new HashMap<>();
+        data.put("resp", "1");
+        data.put("main", "trip");
+        data.put("sub", "get_pick_up");
+        data.put("mode", "get_pick_up");
+        data.put("trip_id", tripId);
+
+        ServiceServerEventResponseHandler serviceServerEventResponseHandler = new ServiceServerEventResponseHandler();
+        serviceServerEventResponseHandler.setServiceHttpResponseListener(new ServiceServerEventResponseHandler.ServiceServerEventResponseListener() {
+            @Override
+            public void onServiceServerEventResponse(List<Map<String, String>> list) {
+                String status = list.get(0).get("status");
+                if (status.equals("1")) {
+                    for (Map<String, String> map: list) {
+                        Location pickUpLocation = new Location("");
+                        pickUpLocation.setLatitude(Double.parseDouble(map.get("pick_lat")));
+                        pickUpLocation.setLongitude(Double.parseDouble(map.get("pick_lng")));
+                        //float distance = appUtil;
+                    }
+                }
             }
         });
 
@@ -229,7 +250,7 @@ public class Speedometer extends Service implements LocationListener {
     // ======================================= NOTIFICATION ========================================
 
     private void setNotificationDialog(String title, String msg, List<Map<String, String>> list) {
-        Intent dialogIntent = new Intent(this, SeatReservationDialogActivity.class);
+        Intent dialogIntent = new Intent(this, MessageDialogActivity.class);
         dialogIntent.putExtra("title", title);
         dialogIntent.putExtra("msg", msg);
         dialogIntent.putExtra("queue_id", list.get(0).get("queue_id"));
@@ -253,6 +274,8 @@ public class Speedometer extends Service implements LocationListener {
     public void onLocationChanged(Location location) {
         float speed = location.getSpeed() * 18 / 5;
         String speedStr = String.valueOf(speed);
+
+        uvLocation = location;
 
         // Send driver location to server
         updateLocation(location);

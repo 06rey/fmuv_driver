@@ -183,14 +183,20 @@ public class BackgroundHttpRequest implements Callback, EventHandler {
                     Map<String, String> value = new HashMap<>();
                     for (int x=0; x<len; x++) {
                         String key = data_obj.names().getString(x);
-                        value.put(key, data_obj.getString(key));
+                        if (key.equals("pick_up_loc")) {
+                            JSONObject jsonLatlng = new JSONObject(data_obj.getString(key));
+                            value.put("pick_lat", jsonLatlng.getString("lat"));
+                            value.put("pick_lng", jsonLatlng.getString("lng"));
+                        } else {
+                            value.put(key, data_obj.getString(key));
+                        }
                     }
                     list.add(value);
                 }
 
                 if (mode.equals("resend")) {
                     resendOverSpeed(data_obj);
-                } else if (mode.equals("sync_request")) {
+                } else if (mode.equals("get_pick_up")) {
                     serviceServerEventResponseHandler.setHttpResponse(list);
                 }
 
