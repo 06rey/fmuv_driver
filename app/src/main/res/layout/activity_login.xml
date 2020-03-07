@@ -127,7 +127,6 @@
                     android:background="@color/colorPrimaryDark"
                     android:enabled="false"
                     android:fontFamily="@string/font_fam"
-                    android:onClick="clickBtnLogin"
                     android:radius="3dp"
                     android:text="Login"
                     android:textAllCaps="false"

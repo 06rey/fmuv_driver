@@ -15,7 +15,7 @@ import android.widget.ProgressBar;
 
 import com.example.fmuv_driver.R;
 import com.example.fmuv_driver.model.pojo.OverSpeed;
-import com.example.fmuv_driver.model.pojo.Trip;
+import com.example.fmuv_driver.view.adapter.OverSpeedHistoryAdapter;
 import com.example.fmuv_driver.view.view_helper.ViewHelper;
 import com.example.fmuv_driver.view_model.AppViewModel;
 
@@ -33,8 +33,8 @@ public class OverSpeedHistoryActivity extends AppCompatActivity {
 
     private Activity activity;
 
-    private RecyclerView tripRecyclerView;
-    private RecyclerView.Adapter tripRecyclerViewAdapter;
+    private RecyclerView overSpeedRecyclerView;
+    private RecyclerView.Adapter overSpeedRecyclerViewAdapter;
     private List<OverSpeed> overSpeedList = new ArrayList<>();
 
     @Override
@@ -50,9 +50,9 @@ public class OverSpeedHistoryActivity extends AppCompatActivity {
         viewHelper = new ViewHelper(this);
         errorLayout = findViewById(R.id.errorLayout);
 
-        tripRecyclerView = findViewById(R.id.rvTripList);
-        tripRecyclerView.setHasFixedSize(true);
-        tripRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        overSpeedRecyclerView = findViewById(R.id.rvTripList);
+        overSpeedRecyclerView.setHasFixedSize(true);
+        overSpeedRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         this.setViewModelObserver();
 
@@ -71,9 +71,16 @@ public class OverSpeedHistoryActivity extends AppCompatActivity {
         viewModel.getOkhttpData().observe(this, new Observer<List<Map<String, String>>>() {
             @Override
             public void onChanged(List<Map<String, String>> list) {
-
-                //
-
+                for (Map<String, String> map: list) {
+                    OverSpeed overSpeed = new OverSpeed();
+                    overSpeed.setRoute(map.get("route_name"));
+                    overSpeed.setDate(map.get("date"));
+                    overSpeed.setTime(map.get("time"));
+                    overSpeed.setSpeed(map.get("speed") + " kph");
+                    overSpeedList.add(overSpeed);
+                }
+                overSpeedRecyclerViewAdapter = new OverSpeedHistoryAdapter(getApplicationContext(), overSpeedList);
+                overSpeedRecyclerView.setAdapter(overSpeedRecyclerViewAdapter);
                 progressBar.setVisibility(View.INVISIBLE);
             }
         });

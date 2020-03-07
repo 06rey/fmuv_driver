@@ -16,9 +16,25 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
-        <activity android:name=".view.activity.PassengerMapActivity"
+        <activity android:name=".view.activity.ForgotPassword3Activity"
+            android:noHistory="true"
+            android:label="Change Password"
+            android:parentActivityName=".view.activity.ForgotPassword2Activity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".view.activity.ForgotPassword2Activity"
+            android:label="Verify Account"
+            android:parentActivityName=".view.activity.ForgotPassword1Activity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".view.activity.ForgotPassword1Activity"
+            android:label="Search Account"
+            android:parentActivityName=".view.activity.LoginActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".view.activity.PassengerMapActivity"
+            android:label="Passenger&apos;s Map"
             android:parentActivityName=".view.activity.SeatingActivity"
-            android:label="Passenger's Map"
             android:screenOrientation="portrait" />
         <activity
             android:name=".view.activity.AccidentAlertHistoryActivity"
