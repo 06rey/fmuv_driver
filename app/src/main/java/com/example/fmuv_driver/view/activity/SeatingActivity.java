@@ -10,6 +10,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -269,6 +270,8 @@ public class SeatingActivity extends AppCompatActivity {
                         double lng = Double.parseDouble(list.get(i).get("pick_lng"));
                         LatLng latLng = new LatLng(lat, lng);
                         seat.setPickUpLatLng(latLng);
+                        seat.setContactNo(list.get(i).get("contact_no"));
+                        Log.d("DebugLog", "COOOONTACTT: "+ list.get(i).get("contact_no"));
                     }
                     seat.setBookingId(list.get(i).get("booking_id"));
                     break;
@@ -294,6 +297,7 @@ public class SeatingActivity extends AppCompatActivity {
         intent.putExtra("seatLat1", String.valueOf(seat.getPickUpLatLng().latitude));
         intent.putExtra("seatLng1", String.valueOf(seat.getPickUpLatLng().longitude));
         intent.putExtra("seatBookingId1", seat.getBookingId());
+        intent.putExtra("contact_no1", seat.getContactNo());
         intent.putExtra("tripId", tripId);
         intent.putExtra("size", 1);
         intent.putExtra("mode", "single");
@@ -303,13 +307,28 @@ public class SeatingActivity extends AppCompatActivity {
     private void passengerMapAll() {
         Intent intent = new Intent(SeatingActivity.this, PassengerMapActivity.class);
         int key = 0;
+        List<String> bookingIdList = new ArrayList<>();
         for (Seat seat: seatList) {
-            if (seat.getPickUpLatLng() != null) {
-                key++;
-                intent.putExtra("seatNo"+String.valueOf(key), seat.getSeatNo());
-                intent.putExtra("seatBookingId"+String.valueOf(key), seat.getBookingId());
-                intent.putExtra("seatLat"+String.valueOf(key), String.valueOf(seat.getPickUpLatLng().latitude));
-                intent.putExtra("seatLng"+String.valueOf(key), String.valueOf(seat.getPickUpLatLng().longitude));
+            if (seat.getStatus().equals("booked")) {
+                if (seat.getPickUpLatLng() != null) {
+                    boolean isExists = false;
+                    if (bookingIdList.size() > 0) {
+                        for (String mBookingId: bookingIdList) {
+                            if (seat.getBookingId().equals(mBookingId)) {
+                                isExists = true;
+                            }
+                        }
+                    }
+                    if (!isExists) {
+                        key++;
+                        bookingIdList.add(seat.getBookingId());
+                        intent.putExtra("seatNo"+String.valueOf(key), seat.getSeatNo());
+                        intent.putExtra("contact_no"+String.valueOf(key), seat.getContactNo());
+                        intent.putExtra("seatBookingId"+String.valueOf(key), seat.getBookingId());
+                        intent.putExtra("seatLat"+String.valueOf(key), String.valueOf(seat.getPickUpLatLng().latitude));
+                        intent.putExtra("seatLng"+String.valueOf(key), String.valueOf(seat.getPickUpLatLng().longitude));
+                    }
+                }
             }
         }
         intent.putExtra("tripId", tripId);
@@ -418,12 +437,13 @@ public class SeatingActivity extends AppCompatActivity {
 
     @Override
     protected void onPostResume() {
+
         getSeatInfo(true);
         broadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 String action = intent.getAction();
-                if (action.equalsIgnoreCase(Speedometer.BROADCAST_ID)) {
+                if (action.equalsIgnoreCase(Speedometer.BROADCAST_LOCATION)) {
                     Bundle extra = intent.getExtras();
                     lat = extra.getString("lat");
                     lng = extra.getString("lng");

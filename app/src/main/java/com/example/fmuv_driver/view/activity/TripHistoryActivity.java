@@ -88,7 +88,8 @@ public class TripHistoryActivity extends AppCompatActivity {
             trip.setStatus(map.get("status"));
             tripList.add(trip);
         }
-        tripRecyclerViewAdapter = new TripRecyclerViewAdapter(getApplicationContext(), tripList, "history");
+        Activity activity = this;
+        tripRecyclerViewAdapter = new TripRecyclerViewAdapter(getApplicationContext(), tripList, "history", activity);
         tripRecyclerView.setAdapter(tripRecyclerViewAdapter);
     }
 

@@ -314,7 +314,7 @@
                         android:layout_weight="1"
                         android:background="@color/color1"
                         android:enabled="true"
-                        android:text="Seating"
+                        android:text="Manage Seat"
                         android:textColor="@color/colorAccent" />
 
                 </LinearLayout>

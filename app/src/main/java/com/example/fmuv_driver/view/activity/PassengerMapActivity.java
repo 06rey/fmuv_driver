@@ -9,14 +9,14 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.Uri;
 import android.os.Bundle;
+
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import com.example.fmuv_driver.R;
 import com.example.fmuv_driver.model.pojo.Seat;
@@ -46,7 +46,6 @@ public class PassengerMapActivity extends AppCompatActivity implements OnMapRead
     // MISC
     private String seatNo, tripId = "1";
     private boolean isRouteLineSet = false, isMapIsReady = false;
-    private List<String> bookingIdList = new ArrayList<>();
     // MAP
     private GoogleMap googleMap;
     // OBJECT
@@ -57,6 +56,8 @@ public class PassengerMapActivity extends AppCompatActivity implements OnMapRead
     private List<Seat> seatList = new ArrayList<>();
     private ViewHelper viewHelper;
     private AppUtil appUtil = new AppUtil();
+    // VIEW
+    private LinearLayout locationLayout;
 
     private  BroadcastReceiver broadcastReceiver;
     @Override
@@ -78,8 +79,11 @@ public class PassengerMapActivity extends AppCompatActivity implements OnMapRead
     // ---------------------------------------------------------------------------------------------
 
     private void initializeAll() {
-        getPrevIntentData();
+        // INIT VIEWS
+        locationLayout = findViewById(R.id.locationLayout);
+
         setViewModelObserver();
+        getPrevIntentData();
         viewHelper = new ViewHelper(this);
     }
 
@@ -87,6 +91,7 @@ public class PassengerMapActivity extends AppCompatActivity implements OnMapRead
         int extraSize = getIntent().getIntExtra("size", 0);
         for (int i=1; i<=extraSize; i++) {
             Seat seat = new Seat();
+            seat.setContactNo(getIntent().getStringExtra("contact_no"+String.valueOf(i)));
             seat.setSeatNo(getIntent().getStringExtra("seatNo"+String.valueOf(i)));
             seat.setBookingId(getIntent().getStringExtra("seatBookingId"+String.valueOf(i)));
             double lat = Double.parseDouble(getIntent().getStringExtra("seatLat"+String.valueOf(i)));
@@ -98,7 +103,7 @@ public class PassengerMapActivity extends AppCompatActivity implements OnMapRead
         if (getIntent().getStringExtra("mode").equals("all")) {
             cameraLatLng = uvLatLng;
         } else {
-            cameraLatLng = seatList.get(0).getPickUpLatLng();
+            cameraLatLng =seatList.get(0).getPickUpLatLng();
         }
     }
 
@@ -112,6 +117,11 @@ public class PassengerMapActivity extends AppCompatActivity implements OnMapRead
         View view = LayoutInflater.from(this).inflate(R.layout.seat_action_dialog, null);
         Button btn1 = view.findViewById(R.id.btn1);
         Button btn2 = view.findViewById(R.id.btn2);
+        Button btnSms = view.findViewById(R.id.btnViewInMap);
+        Button btnCall = view.findViewById(R.id.btnCall);
+        btnSms.setVisibility(View.VISIBLE);
+        btnCall.setVisibility(View.VISIBLE);
+        btnSms.setText("Send SMS");
 
         btn1.setText("Pick Passenger");
         alertBuilder.setView(view)
@@ -124,6 +134,24 @@ public class PassengerMapActivity extends AppCompatActivity implements OnMapRead
             public void onClick(View v) {
                 pickPassenger(seat);
                 dialog.dismiss();
+            }
+        });
+
+        btnCall.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String phone = seat.getContactNo();
+                Intent intent = new Intent(Intent.ACTION_DIAL, Uri.fromParts("tel", phone, null));
+                startActivity(intent);
+            }
+        });
+
+        btnSms.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent sendIntent = new Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:"+ seat.getContactNo()));
+                sendIntent.putExtra("sms_body", "Find Me UV Notification:\n");
+                startActivity(sendIntent);
             }
         });
 
@@ -176,15 +204,13 @@ public class PassengerMapActivity extends AppCompatActivity implements OnMapRead
             @Override
             public boolean onMarkerClick(Marker marker) {
                 String title = marker.getTitle();
+                Log.d("DebugLog", "Booking ):--"+ String.valueOf(seatList.size()));
+                Log.d("DebugLog", "marker.getTitle():--"+ title);
                 if (title.contains("Booking")) {
                     for (Seat seat: seatList) {
                         if (title.equals(seat.getMarkerTitle())) {
-                            float distance = appUtil.computeDistance(uvLatLng, seat.getPickUpLatLng(), routeItemList.get(0).getPolyLineOption());
-                            if (distance > 0) {
-                                setDialogAction(seat);
-                            } else {
-                                viewHelper.showMessage("Message", "You missed to pick up the passenger.");
-                            }
+                            Log.d("DebugLog", "seat.getMarkerTitle():--"+ seat.getMarkerTitle());
+                            setDialogAction(seat);
                         }
                     }
                 }
@@ -199,26 +225,16 @@ public class PassengerMapActivity extends AppCompatActivity implements OnMapRead
     private void setPassengerMarker() {
         int bookNum = 1;
         for (Seat seat: seatList) {
-            boolean exists = false;
-            for(String val: bookingIdList) {
-                if (val.equals(seat.getBookingId())) {
-                    exists = true;
-                    break;
-                }
-            }
-            if (!exists) {
-                Marker passengerMarker;
-                BitmapDescriptor icon = BitmapDescriptorFactory.fromResource(R.drawable.map_pin);
-                MarkerOptions markerOptions = new MarkerOptions()
-                        .title("Booking no."+String.valueOf(bookNum)+" pick up location")
-                        .position(seat.getPickUpLatLng())
-                        .icon(icon);
-                passengerMarker = googleMap.addMarker(markerOptions);
-                seat.setMarker(passengerMarker);
-                seat.setMarkerTitle(passengerMarker.getTitle());
-                bookingIdList.add(seat.getBookingId());
-                bookNum++;
-            }
+            Marker passengerMarker;
+            BitmapDescriptor icon = BitmapDescriptorFactory.fromResource(R.drawable.map_pin);
+            MarkerOptions markerOptions = new MarkerOptions()
+                    .title("Booking no."+String.valueOf(bookNum)+" pick up location")
+                    .position(seat.getPickUpLatLng())
+                    .icon(icon);
+            passengerMarker = googleMap.addMarker(markerOptions);
+            seat.setMarker(passengerMarker);
+            seat.setMarkerTitle(passengerMarker.getTitle());
+            bookNum++;
         }
     }
 
@@ -240,16 +256,21 @@ public class PassengerMapActivity extends AppCompatActivity implements OnMapRead
 
         setUvLocation();
 
-        if (cameraLatLng != null) {
-            CameraPosition googlePlex = CameraPosition.builder()
-                    .target(cameraLatLng)
-                    .zoom(15)
-                    .bearing(0)
-                    .tilt(0)
-                    .build();
-
-            googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(googlePlex), 1000, null);
+        int zoom = 15;
+        if (cameraLatLng == null) {
+            locationLayout.setVisibility(View.VISIBLE);
+            cameraLatLng = routeItemList.get(0).getOriginLatLng();
+            zoom = 12;
         }
+
+        CameraPosition googlePlex = CameraPosition.builder()
+                .target(cameraLatLng)
+                .zoom(zoom)
+                .bearing(0)
+                .tilt(0)
+                .build();
+
+        googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(googlePlex), 1000, null);
     }
 
     public void setUvLocation() {
@@ -336,11 +357,12 @@ public class PassengerMapActivity extends AppCompatActivity implements OnMapRead
             @Override
             public void onReceive(Context context, Intent intent) {
                 String action = intent.getAction();
-                if (action.equalsIgnoreCase(Speedometer.BROADCAST_ID)) {
+                if (action.equalsIgnoreCase(Speedometer.BROADCAST_LOCATION)) {
                     Bundle extra = intent.getExtras();
-                    uvLatLng = new LatLng(11.235080573576141, 124.98715852463721);//new LatLng(Double.parseDouble(extra.getString("lat")), Double.parseDouble(extra.getString("lng")));
+                    uvLatLng = new LatLng(Double.parseDouble(extra.getString("lat")), Double.parseDouble(extra.getString("lng")));
                     if (isMapIsReady) {
                         setUvLocation();
+                        locationLayout.setVisibility(View.GONE);
                     }
                 }
             }

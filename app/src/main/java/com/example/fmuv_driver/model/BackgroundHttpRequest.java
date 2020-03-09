@@ -56,6 +56,7 @@ public class BackgroundHttpRequest implements Callback, EventHandler {
         Log.d("DebugLog", "Background service event source has initiated!");
         String token = new SharedPref(context, "loginSession").getValue("token");
         String url;
+        this.mode = mode;
         url = context.getResources().getString(R.string.BASE_URL);
         url = url + "?ref=2&resp=1&event=server_event&tk=" + context.getResources().getString(R.string.tk) + "&token=" + token;
         for(String key: data.keySet()) {
@@ -145,16 +146,18 @@ public class BackgroundHttpRequest implements Callback, EventHandler {
         if (mode.equals("over_speed")) {
             if (data.get("mode").equals("new")) {
                 Map<String, String> values = new HashMap<>();
-
                 values.put("speed", data.get("speed"));
                 values.put("trip_id", data.get("trip_id"));
                 values.put("employee_id", "1");
-
                 db.insert(TABLE_NAME, values);
-
-                Log.d("DebugLog", "Failed to to send over speed log to server. Data will be save to local storage and resend when device is connected to the internet.");
             }
         }
+
+        List<Map<String, String>> list = new ArrayList<>();
+        Map<String, String> res = new HashMap<>();
+        res.put("status", "failed");
+        list.add(res);
+        serviceServerEventResponseHandler.setHttpResponse(list);
     }
 
     @Override
@@ -196,7 +199,7 @@ public class BackgroundHttpRequest implements Callback, EventHandler {
 
                 if (mode.equals("resend")) {
                     resendOverSpeed(data_obj);
-                } else if (mode.equals("get_pick_up")) {
+                } else {
                     serviceServerEventResponseHandler.setHttpResponse(list);
                 }
 

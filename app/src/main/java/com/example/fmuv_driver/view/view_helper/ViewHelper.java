@@ -18,11 +18,21 @@ import java.util.TimerTask;
 
 public class ViewHelper {
 
-    private AlertDialog progressDialog;
+    public AlertDialog progressDialog;
     private Context context;
+
+    public AlertDialog connectLoading;
 
     public ViewHelper(Context context) {
         this.context = context;
+        intiConnectLoading();
+    }
+
+    private void intiConnectLoading() {
+        AlertDialog.Builder alertBuilder = new AlertDialog.Builder(context, R.style.MyAlertDialogStyle);
+        View view = LayoutInflater.from(context).inflate(R.layout.connect_dialog, null);
+        alertBuilder.setView(view);
+        connectLoading = alertBuilder.create();
     }
 
     public void showProgressDialog(String msg, String title) {

@@ -13,8 +13,14 @@ public class Seat {
     private String markerTitle;
     private Marker marker;
     private String BookingId;
+    private String contactNo;
 
     // SETTERS
+
+
+    public void setContactNo(String contactNo) {
+        this.contactNo = contactNo;
+    }
 
     public void setBookingId(String bookingId) {
         BookingId = bookingId;
@@ -44,6 +50,11 @@ public class Seat {
         this.seatNo = seatNo;
     }
     // GETTERS
+
+
+    public String getContactNo() {
+        return contactNo;
+    }
 
     public String getBookingId() {
         return BookingId;

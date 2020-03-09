@@ -21,7 +21,6 @@ import com.example.fmuv_driver.handler.ServiceServerEventResponseHandler;
 import com.example.fmuv_driver.model.BackgroundHttpRequest;
 import com.example.fmuv_driver.model.ServerEventModel;
 import com.example.fmuv_driver.model.SharedPref;
-import com.example.fmuv_driver.model.database.DbHelper;
 import com.example.fmuv_driver.utility.AppNotification;
 import com.example.fmuv_driver.utility.AppUtil;
 import com.example.fmuv_driver.utility.CheckInternet;
@@ -34,6 +33,8 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import androidx.core.content.ContextCompat;
 import okhttp3.Call;
@@ -46,20 +47,15 @@ public class Speedometer extends Service implements LocationListener {
 
     private final static int LOCATION_INTERVAL = 0;
     private final static float LOCATION_DISTANCE = 0;
-    private final static String TABLE_NAME = "over_speed";
-
     public static final String FMUV_NOTIFICATION = "FMUV NOTIFICATION";
-    public static final String OVER_SPEED = "over_speed";
-    public static final String UPDATE_LOCATION = "update_location";
-    public static final String SEAT_RESERVATION = "seat_reservation";
+
     public static final int SPEED_LIMIT = 100;
 
-    public static final String BROADCAST_ID = "LOCATION";
+    public static final String BROADCAST_LOCATION = "LOCATION";
     public static final String BROADCAST_INTERNET_STATUS = "BROADCAST_INTERNET_STATUS";
 
     private String tripId, destination;
     private AppNotification appNotification;
-    private DbHelper db;
 
     private long prevMillis = 0;
     private Location prevLocation = null;
@@ -84,7 +80,6 @@ public class Speedometer extends Service implements LocationListener {
             } else if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
                 locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, LOCATION_INTERVAL, LOCATION_DISTANCE, this);
             }
-
         }
     }
 
@@ -103,19 +98,20 @@ public class Speedometer extends Service implements LocationListener {
         this.tripId = intent.getStringExtra("tripId");
         this.destination = intent.getStringExtra("destination");
 
+        // Notification that the trip has started
         Intent notificationIntent = new Intent(this, TripManagerActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this,
                 0, notificationIntent, 0);
-
         appNotification = new AppNotification.Builder(this)
                 .setChannel_id(FMUV_NOTIFICATION)
                 .setPendingIntent(pendingIntent)
                 .setTitle("Traveling to " + destination)
                 .setText("Accident alert and over speed detector is running...")
                 .build();
-
         startForeground(1, appNotification.getNotification());
         initialize();
+
+        // Checking driver internet connectivity status callback function
         checkInternet = new CheckInternet(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
@@ -132,6 +128,9 @@ public class Speedometer extends Service implements LocationListener {
                 checkInternet.newCall();
             }
         });
+        // Update driver internet connectivity status in the db
+        updateOnlineStatus();
+        // // Checking driver online status
         checkInternet.newCall();
         return START_STICKY;
     }
@@ -151,12 +150,11 @@ public class Speedometer extends Service implements LocationListener {
     public void onTaskRemoved(Intent rootIntent) {
         super.onTaskRemoved(rootIntent);
     }
-
-
     // ======================================= BROADCASTER =========================================
 
+    // Broadcast driver location
     private void broadcastLocation(String lat, String lng) {
-        Intent intent = new Intent(BROADCAST_ID);
+        Intent intent = new Intent(BROADCAST_LOCATION);
         Bundle bundle = new Bundle();
         bundle.putString("lat", lat);
         bundle.putString("lng", lng);
@@ -164,6 +162,7 @@ public class Speedometer extends Service implements LocationListener {
         sendBroadcast(intent);
     }
 
+    // Broadcast driver internet connectivity
     private void broadcastInternetStatus(boolean isOnline) {
         Intent intent = new Intent(BROADCAST_INTERNET_STATUS);
         Bundle bundle = new Bundle();
@@ -174,6 +173,28 @@ public class Speedometer extends Service implements LocationListener {
 
     // ======================================= NETWORK CALL ========================================
 
+    // Http request to update driver internet connectivity. executed every minute using a timer task
+    private void updateOnlineStatus() {
+        Map<String, String> data = new HashMap<>();
+
+        data.put("resp", "0");
+        data.put("main", "trip");
+        data.put("sub", "update_online_state");
+        data.put("trip_id", tripId);
+
+        new BackgroundHttpRequest(null).okHttpRequest(getApplicationContext(), data, "GET", "update_online_state");
+
+        Timer timer = new Timer();
+        TimerTask timerTask = new TimerTask() {
+            @Override
+            public void run() {
+                updateOnlineStatus();
+            }
+        };
+        timer.schedule(timerTask, 100);
+    }
+
+    // Http request to report driver over speed log
     private void reportSpeed(String speedStr) {
         Map<String, String> data = new HashMap<>();
 
@@ -185,10 +206,11 @@ public class Speedometer extends Service implements LocationListener {
         data.put("trip_id", tripId);
         data.put("employee_id", "1");
 
-        new BackgroundHttpRequest(null).okHttpRequest(getApplicationContext(), data, "GET", OVER_SPEED);
+        new BackgroundHttpRequest(null).okHttpRequest(getApplicationContext(), data, "GET", "over_speed");
 
     }
 
+    // Http request to update driver's gps location, synchronous update using event source
     private void updateLocation(Location location) {
         Map<String, String> data = new HashMap<>();
         String lat = String.valueOf(location.getLatitude());
@@ -200,25 +222,10 @@ public class Speedometer extends Service implements LocationListener {
         data.put("lng", lng);
         data.put("trip_id", tripId);
 
-        ServiceServerEventResponseHandler serviceServerEventResponseHandler = new ServiceServerEventResponseHandler();
-        serviceServerEventResponseHandler.setServiceHttpResponseListener(new ServiceServerEventResponseHandler.ServiceServerEventResponseListener() {
-            @Override
-            public void onServiceServerEventResponse(List<Map<String, String>> list) {
-                String status = list.get(0).get("status");
-                if (status.equals("1")) {
-                    // if distance to destination is < 100 meters
-                    new SharedPref(getApplicationContext(), "loginSession").setValue("tripState", "Arrived");
-                    Intent dialogIntent = new Intent(getApplicationContext(), MessageDialogActivity.class);
-                    dialogIntent.putExtra("msg", "You have reached your destination. ");
-                    dialogIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(dialogIntent);
-                }
-            }
-        });
-
-        new BackgroundHttpRequest(serviceServerEventResponseHandler).okHttpRequest(getApplicationContext(), data, "GET", UPDATE_LOCATION);
+        new BackgroundHttpRequest(null).okHttpRequest(getApplicationContext(), data, "GET", "update_location");
     }
 
+    // Synchronous  Http request to get to be pick up passenger
     private void get_pick_up() {
         Map<String, String> data = new HashMap<>();
         data.put("resp", "1");
@@ -246,7 +253,6 @@ public class Speedometer extends Service implements LocationListener {
         new BackgroundHttpRequest(serviceServerEventResponseHandler).serverSentEvent(getApplicationContext(), data,"sync_request");
     }
 
-
     // ======================================= NOTIFICATION ========================================
 
     private void setNotificationDialog(String title, String msg, List<Map<String, String>> list) {
@@ -259,6 +265,7 @@ public class Speedometer extends Service implements LocationListener {
         startActivity(dialogIntent);
     }
 
+    // Dialog message to alert driver that hi/she committed over speed
     private void setOverSpeedDialog(String speed) {
         Intent dialogIntent = new Intent(this, OverSpeedDialogActivity.class);
         dialogIntent.putExtra("speed", speed + " kph");
@@ -270,6 +277,8 @@ public class Speedometer extends Service implements LocationListener {
     }
 
     // ====================================== LOCATION LISTENER ====================================
+
+    // GPS location listener
     @Override
     public void onLocationChanged(Location location) {
         float speed = location.getSpeed() * 18 / 5;

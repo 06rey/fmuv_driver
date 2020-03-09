@@ -6,6 +6,5 @@
     <string name="BASE_URL1">http://findmeuv.x10host.com/fmuv/</string>
     <string name="BASE_URL">http://192.168.43.147/fmuv/</string>
     <string name="BASE_URL2">http://192.168.137.1/fmuv/</string>
-
     <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">AIzaSyBzunXZ8cdKAGEdZqHtElfhzuZmURvnO70</string>
 </resources>

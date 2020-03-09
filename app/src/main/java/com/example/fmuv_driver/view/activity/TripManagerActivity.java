@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.app.Activity;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -46,6 +47,7 @@ public class TripManagerActivity extends AppCompatActivity {
 
         viewModel = ViewModelProviders.of(this).get(AppViewModel.class);
         viewModel.initialize(this);
+
         this.initialize();
     }
 
@@ -55,6 +57,14 @@ public class TripManagerActivity extends AppCompatActivity {
         viewHelper = new ViewHelper(this);
         errorLayout = findViewById(R.id.errorLayout);
         this.setViewModelObserver();
+
+        viewHelper.connectLoading.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface dialog) {
+                viewHelper.connectLoading.dismiss();
+                onBackPressed();
+            }
+        });
 
         activity = this;
 
@@ -66,6 +76,7 @@ public class TripManagerActivity extends AppCompatActivity {
     }
 
     private void getTrip() {
+        progressBar.setVisibility(View.VISIBLE);
         Map<String, String> data = new HashMap<>();
         data.put("resp", "1");
         data.put("main", "trip");
@@ -88,7 +99,7 @@ public class TripManagerActivity extends AppCompatActivity {
             trip.setStatus(map.get("status"));
             tripList.add(trip);
         }
-        tripRecyclerViewAdapter = new TripRecyclerViewAdapter(getApplicationContext(), tripList, "current");
+        tripRecyclerViewAdapter = new TripRecyclerViewAdapter(this, tripList, "current", activity);
         tripRecyclerView.setAdapter(tripRecyclerViewAdapter);
     }
 
@@ -111,7 +122,6 @@ public class TripManagerActivity extends AppCompatActivity {
                         startSpeedometerService(data);
                     }
                 }
-                progressBar.setVisibility(View.INVISIBLE);
                 setTripRecyclerViewItem(list);
                 progressBar.setVisibility(View.GONE);
             }
@@ -120,7 +130,7 @@ public class TripManagerActivity extends AppCompatActivity {
         viewModel.getOkhttpConnectionError().observe(this, new Observer<Boolean>() {
             @Override
             public void onChanged(Boolean aBoolean) {
-                progressBar.setVisibility(View.INVISIBLE);
+                progressBar.setVisibility(View.GONE);
                 errorLayout.setVisibility(View.VISIBLE);
             }
         });
@@ -128,7 +138,7 @@ public class TripManagerActivity extends AppCompatActivity {
         viewModel.getOkHttpServiceError().observe(this, new Observer<Boolean>() {
             @Override
             public void onChanged(Boolean aBoolean) {
-                progressBar.setVisibility(View.INVISIBLE);
+                progressBar.setVisibility(View.GONE);
                 errorLayout.setVisibility(View.VISIBLE);
             }
         });
@@ -136,7 +146,7 @@ public class TripManagerActivity extends AppCompatActivity {
         viewModel.getOkhttpStatusError().observe(this, new Observer<Boolean>() {
             @Override
             public void onChanged(Boolean aBoolean) {
-                progressBar.setVisibility(View.INVISIBLE);
+                progressBar.setVisibility(View.GONE);
                 errorLayout.setVisibility(View.VISIBLE);
             }
         });
@@ -144,15 +154,15 @@ public class TripManagerActivity extends AppCompatActivity {
         viewModel.getOkhttpDataError().observe(this, new Observer<Boolean>() {
             @Override
             public void onChanged(Boolean aBoolean) {
-                progressBar.setVisibility(View.INVISIBLE);
-                viewHelper.exitActivity(activity,"No Result", "Currently you have no assign trip at the moment.");
+                progressBar.setVisibility(View.GONE);
+                viewHelper.exitActivity(activity,"No Result", "No result found.");
             }
         });
 
         viewModel.getOkhttpJsonError().observe(this, new Observer<Boolean>() {
             @Override
             public void onChanged(Boolean aBoolean) {
-                progressBar.setVisibility(View.INVISIBLE);
+                progressBar.setVisibility(View.GONE);
                 errorLayout.setVisibility(View.VISIBLE);
             }
         });
@@ -160,7 +170,7 @@ public class TripManagerActivity extends AppCompatActivity {
         viewModel.getTokenError().observe(this, new Observer<Boolean>() {
             @Override
             public void onChanged(Boolean aBoolean) {
-                progressBar.setVisibility(View.INVISIBLE);
+                progressBar.setVisibility(View.GONE);
                 viewHelper.sessionExpiredDialog(new Intent(TripManagerActivity.this, LoginActivity.class), TripManagerActivity.this);
             }
         });
@@ -173,7 +183,6 @@ public class TripManagerActivity extends AppCompatActivity {
 
     public void onClickRetry(View view) {
         errorLayout.setVisibility(View.INVISIBLE);
-        progressBar.setVisibility(View.VISIBLE);
         this.getTrip();
     }
 }
