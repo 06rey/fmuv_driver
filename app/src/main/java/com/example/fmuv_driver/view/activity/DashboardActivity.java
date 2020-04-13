@@ -7,6 +7,9 @@ import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProviders;
 
 import android.Manifest;
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -61,23 +64,36 @@ public class DashboardActivity extends AppCompatActivity {
     }
 
     public void logout(View view) {
-        Map<String, String> data = new HashMap<>();
-        data.put("resp", "0");
-        data.put("main", "account");
-        data.put("sub", "logout");
-        viewModel.okHttpRequest(data, "POST", "");
+        final Context context = this;
+        AlertDialog.Builder alertBuilder = new AlertDialog.Builder(this, R.style.MyAlertDialogStyle);
+        alertBuilder.setTitle("Logout")
+                .setMessage("Are you sure you want to logout your account?")
+                .setCancelable(false)
+                .setNegativeButton("No", null)
+                .setPositiveButton("YES", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        Map<String, String> data = new HashMap<>();
+                        data.put("resp", "0");
+                        data.put("main", "account");
+                        data.put("sub", "logout_acc");
+                        viewModel.okHttpRequest(data, "POST", "");
 
-        new SharedPref(this, "loginSession").clearSharedPref();
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                Intent intent = new Intent(DashboardActivity.this, LoginActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
-                startActivity(intent);
-                overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
-                finish();
-            }
-        }, 500);
+                        new SharedPref(context, "loginSession").clearSharedPref();
+                        new Handler().postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                Intent intent = new Intent(DashboardActivity.this, LoginActivity.class);
+                                intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+                                startActivity(intent);
+                                overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
+                                finish();
+                            }
+                        }, 500);
+                    }
+                });
+        AlertDialog dialog = alertBuilder.create();
+        dialog.show();
     }
 
     public void accountClickListener(View view) {

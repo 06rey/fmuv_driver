@@ -124,7 +124,7 @@
                     android:layout_marginTop="20dp"
                     android:layout_marginEnd="8dp"
                     android:layout_marginRight="15dp"
-                    android:background="@color/colorPrimaryDark"
+                    android:background="@drawable/rec_shape_primary"
                     android:enabled="false"
                     android:fontFamily="@string/font_fam"
                     android:radius="3dp"

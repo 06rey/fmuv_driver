@@ -2,7 +2,15 @@ package com.example.fmuv_driver.model.pojo;
 
 public class Trip {
 
-    private String tripId, date, from, to, company, departure, passNo, plate, destination, status;
+    private String tripId, arrivalTime, date, from, to, company, departure, passNo, plate, destination, status;
+
+    public String getArrivalTime() {
+        return arrivalTime;
+    }
+
+    public void setArrivalTime(String arrivalTime) {
+        this.arrivalTime = arrivalTime;
+    }
 
     public String getStatus() {
         return status;

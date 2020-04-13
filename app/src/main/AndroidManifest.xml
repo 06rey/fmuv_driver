@@ -17,9 +17,16 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
-        <activity android:name=".view.activity.ForgotPassword3Activity"
-            android:noHistory="true"
+
+        <activity
+            android:name=".view.activity.AccidentAlertDialogActivity"
+            android:excludeFromRecents="true"
+            android:screenOrientation="portrait"
+            android:theme="@style/ThemeDialog" />
+        <activity
+            android:name=".view.activity.ForgotPassword3Activity"
             android:label="Change Password"
+            android:noHistory="true"
             android:parentActivityName=".view.activity.ForgotPassword2Activity"
             android:screenOrientation="portrait" />
         <activity
@@ -84,7 +91,7 @@
             android:theme="@style/AppTheme" />
         <activity
             android:name=".view.activity.DashboardActivity"
-            android:label="Dashboard"
+            android:label="Home"
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme" />
         <activity

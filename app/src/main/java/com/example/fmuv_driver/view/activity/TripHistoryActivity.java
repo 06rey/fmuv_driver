@@ -1,5 +1,6 @@
 package com.example.fmuv_driver.view.activity;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
@@ -9,9 +10,12 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import com.example.fmuv_driver.R;
 import com.example.fmuv_driver.model.SharedPref;
@@ -73,26 +77,6 @@ public class TripHistoryActivity extends AppCompatActivity {
         viewModel.okHttpRequest(data, "GET", "");
     }
 
-    private void setTripRecyclerViewItem(List<Map<String, String>> list) {
-        for (Map<String, String> map: list) {
-            Trip trip = new Trip();
-            trip.setTripId(map.get("trip_id"));
-            trip.setDestination(map.get("destination"));
-            trip.setDate(map.get("date"));
-            trip.setFrom(map.get("origin"));
-            trip.setTo(map.get("destination"));
-            trip.setCompany(map.get("company_name"));
-            trip.setDeparture(map.get("depart_time"));
-            trip.setPassNo(map.get("no_of_pass"));
-            trip.setPlate(map.get("plate_no"));
-            trip.setStatus(map.get("status"));
-            tripList.add(trip);
-        }
-        Activity activity = this;
-        tripRecyclerViewAdapter = new TripRecyclerViewAdapter(getApplicationContext(), tripList, "history", activity);
-        tripRecyclerView.setAdapter(tripRecyclerViewAdapter);
-    }
-
     private void startSpeedometerService(Map<String, String> data) {
         Intent intent = new Intent(this, Speedometer.class);
         intent.putExtra("tripId", data.get("trip_id"));
@@ -122,7 +106,7 @@ public class TripHistoryActivity extends AppCompatActivity {
             @Override
             public void onChanged(Boolean aBoolean) {
                 progressBar.setVisibility(View.INVISIBLE);
-                errorLayout.setVisibility(View.VISIBLE);
+                viewHelper.exitActivity(activity,"Trip History", "Failed to connect to server.");
             }
         });
 
@@ -130,7 +114,7 @@ public class TripHistoryActivity extends AppCompatActivity {
             @Override
             public void onChanged(Boolean aBoolean) {
                 progressBar.setVisibility(View.INVISIBLE);
-                errorLayout.setVisibility(View.VISIBLE);
+                viewHelper.exitActivity(activity,"Trip History", "Service is not available at the moment.");
             }
         });
 
@@ -138,7 +122,7 @@ public class TripHistoryActivity extends AppCompatActivity {
             @Override
             public void onChanged(Boolean aBoolean) {
                 progressBar.setVisibility(View.INVISIBLE);
-                errorLayout.setVisibility(View.VISIBLE);
+                viewHelper.exitActivity(activity,"Trip History", "Service is not available at the moment.");
             }
         });
 
@@ -146,7 +130,7 @@ public class TripHistoryActivity extends AppCompatActivity {
             @Override
             public void onChanged(Boolean aBoolean) {
                 progressBar.setVisibility(View.INVISIBLE);
-                viewHelper.exitActivity(activity,"No Result", "Currently you have no assign trip at the moment.");
+                viewHelper.exitActivity(activity,"Trip History", "No record found.");
             }
         });
 
@@ -154,7 +138,7 @@ public class TripHistoryActivity extends AppCompatActivity {
             @Override
             public void onChanged(Boolean aBoolean) {
                 progressBar.setVisibility(View.INVISIBLE);
-                errorLayout.setVisibility(View.VISIBLE);
+                viewHelper.exitActivity(activity,"Trip History", "Sorry, something went wrong there.");
             }
         });
 
@@ -176,5 +160,71 @@ public class TripHistoryActivity extends AppCompatActivity {
         errorLayout.setVisibility(View.INVISIBLE);
         progressBar.setVisibility(View.VISIBLE);
         this.getTrip();
+    }
+
+//---------------------------------------- RECYCLER VIEW ADAPTER -----------------------------------------
+    private void setTripRecyclerViewItem(List<Map<String, String>> list) {
+        for (Map<String, String> map : list) {
+            Trip trip = new Trip();
+            trip.setTripId(map.get("trip_id"));
+            trip.setDestination(map.get("destination"));
+            trip.setDate(map.get("date"));
+            trip.setFrom(map.get("origin"));
+            trip.setTo(map.get("destination"));
+            trip.setCompany(map.get("company_name"));
+            trip.setDeparture(map.get("depart_time"));
+            trip.setPassNo(map.get("no_of_pass"));
+            trip.setPlate(map.get("plate_no"));
+            trip.setStatus(map.get("status"));
+            trip.setArrivalTime(map.get("arrival_time"));
+            tripList.add(trip);
+
+            tripRecyclerViewAdapter = new RecyclerView.Adapter<ViewHolder>() {
+
+                @NonNull
+                @Override
+                public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+                    View view = LayoutInflater.from(parent.getContext())
+                            .inflate(R.layout.trip_history_list, parent, false);
+                    return new ViewHolder(view);
+                }
+
+                @Override
+                public int getItemCount() {
+                    return tripList.size();
+                }
+
+                @Override
+                public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+                    Trip trip = tripList.get(position);
+                    holder.txtDate.setText(trip.getDate());
+                    holder.txtDepart.setText(trip.getDeparture());
+                    holder.txtArrive.setText(trip.getArrivalTime());
+                    holder.txtPlateNo.setText(trip.getPlate());
+                    holder.txtNoPass.setText(trip.getPassNo());
+                    holder.txtCompany.setText(trip.getCompany());
+                    holder.txtFrom.setText(trip.getFrom());
+                    holder.txtTo.setText(trip.getTo());
+                }
+            };
+            tripRecyclerView.setAdapter(tripRecyclerViewAdapter);
+        }
+    }
+    // View holder
+    public class ViewHolder extends RecyclerView.ViewHolder {
+
+        TextView txtDate, txtDepart, txtArrive, txtPlateNo, txtNoPass, txtCompany, txtFrom, txtTo;
+
+        public ViewHolder(@NonNull View itemView) {
+            super(itemView);
+            txtDate = itemView.findViewById(R.id.txtDate);
+            txtDepart = itemView.findViewById(R.id.txtDepart);
+            txtArrive = itemView.findViewById(R.id.txtArrive);
+            txtPlateNo = itemView.findViewById(R.id.txtPlateNo);
+            txtNoPass = itemView.findViewById(R.id.txtNoPass);
+            txtCompany = itemView.findViewById(R.id.txtCompany);
+            txtFrom = itemView.findViewById(R.id.txtFrom);
+            txtTo = itemView.findViewById(R.id.txtTo);
+        }
     }
 }

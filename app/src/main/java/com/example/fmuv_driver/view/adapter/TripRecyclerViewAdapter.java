@@ -4,7 +4,6 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,7 +18,6 @@ import com.example.fmuv_driver.model.SharedPref;
 import com.example.fmuv_driver.model.pojo.Trip;
 import com.example.fmuv_driver.service.Speedometer;
 import com.example.fmuv_driver.view.activity.SeatingActivity;
-import com.example.fmuv_driver.view.view_helper.ViewHelper;
 
 import java.util.HashMap;
 import java.util.List;
@@ -69,7 +67,7 @@ public class TripRecyclerViewAdapter extends RecyclerView.Adapter<TripRecyclerVi
         if (mode.equals("current")) {
             if (trip.getStatus().equals("Traveling")) {
                 holder.btnStart.setText("Arrived");
-                holder.btnStart.setBackgroundColor(context.getResources().getColor(R.color.green));
+                holder.btnStart.setBackground(context.getResources().getDrawable(R.drawable.rec_success));
 
                 holder.btnStart.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -100,7 +98,7 @@ public class TripRecyclerViewAdapter extends RecyclerView.Adapter<TripRecyclerVi
                                                         public void run() {
                                                             holder.btnStart.setEnabled(false);
                                                             holder.btnStart.setText("Arrived");
-                                                            holder.btnStart.setBackgroundColor(context.getResources().getColor(R.color.green));
+                                                            holder.btnStart.setBackground(context.getResources().getDrawable(R.drawable.rec_success));
 
                                                             SharedPref sharedPref = new SharedPref(context, "loginSession");
                                                             sharedPref.setValue("tripId", "");
@@ -163,7 +161,7 @@ public class TripRecyclerViewAdapter extends RecyclerView.Adapter<TripRecyclerVi
                                                         @Override
                                                         public void run() {
                                                             holder.btnStart.setText("Arrived");
-                                                            holder.btnStart.setBackgroundColor(context.getResources().getColor(R.color.green));
+                                                            holder.btnStart.setBackground(context.getResources().getDrawable(R.drawable.rec_success));
                                                             Intent intent = new Intent(context, Speedometer.class);
                                                             intent.putExtra("tripId", trip.getTripId());
                                                             intent.putExtra("destination", trip.getDestination());

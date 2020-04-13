@@ -6,6 +6,10 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -19,17 +23,13 @@ import android.widget.Toast;
 
 import com.example.fmuv_driver.handler.ServiceServerEventResponseHandler;
 import com.example.fmuv_driver.model.BackgroundHttpRequest;
-import com.example.fmuv_driver.model.ServerEventModel;
-import com.example.fmuv_driver.model.SharedPref;
 import com.example.fmuv_driver.utility.AppNotification;
-import com.example.fmuv_driver.utility.AppUtil;
 import com.example.fmuv_driver.utility.CheckInternet;
+import com.example.fmuv_driver.view.activity.AccidentAlertDialogActivity;
 import com.example.fmuv_driver.view.activity.OverSpeedDialogActivity;
-import com.example.fmuv_driver.view.activity.MessageDialogActivity;
 import com.example.fmuv_driver.view.activity.TripManagerActivity;
 
 import java.io.IOException;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +41,7 @@ import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
-public class Speedometer extends Service implements LocationListener {
+public class Speedometer extends Service implements LocationListener, SensorEventListener {
 
     private LocationManager locationManager;
 
@@ -57,18 +57,17 @@ public class Speedometer extends Service implements LocationListener {
     private String tripId, destination;
     private AppNotification appNotification;
 
-    private long prevMillis = 0;
-    private Location prevLocation = null;
-    private AppUtil appUtil = new AppUtil();
-
     private Location uvLocation = new Location("");
-
-    private ServerEventModel serverEventModel;
-    private ServiceServerEventResponseHandler serviceServerEventResponseHandler = new ServiceServerEventResponseHandler();
+    private double uvSpeed;
 
     // Holds check internet class callback function, cancelled if this service is destroyed
     private CheckInternet checkInternet;
     private Call checkInternetCallBack;
+
+    // Sensor manager
+    private SensorManager sensorManager;
+    private boolean isAccidentAlertTriggered;
+    private int accidentInterval = 30;
 
     private void initLocationManager() {
         if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
@@ -87,6 +86,7 @@ public class Speedometer extends Service implements LocationListener {
     public void onCreate() {
         super.onCreate();
         initLocationManager();
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
     }
 
     private void initialize() {
@@ -132,6 +132,18 @@ public class Speedometer extends Service implements LocationListener {
         updateOnlineStatus();
         // // Checking driver online status
         checkInternet.newCall();
+
+
+        // Sensor object
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        Sensor sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+
+        sensorManager.registerListener(this,
+                sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
+                SensorManager.SENSOR_DELAY_UI);
+        // Accident alert dialog interval
+        accidentAlertInterval();
+
         return START_STICKY;
     }
 
@@ -142,7 +154,6 @@ public class Speedometer extends Service implements LocationListener {
 
     @Override
     public void onDestroy() {
-        checkInternetCallBack.cancel();
         super.onDestroy();
     }
 
@@ -255,12 +266,13 @@ public class Speedometer extends Service implements LocationListener {
 
     // ======================================= NOTIFICATION ========================================
 
-    private void setNotificationDialog(String title, String msg, List<Map<String, String>> list) {
-        Intent dialogIntent = new Intent(this, MessageDialogActivity.class);
-        dialogIntent.putExtra("title", title);
-        dialogIntent.putExtra("msg", msg);
-        dialogIntent.putExtra("queue_id", list.get(0).get("queue_id"));
-        dialogIntent.putExtra("no_of_pass", list.get(0).get("no_of_pass"));
+    private void showAccidentAlert(String g_force) {
+        Intent dialogIntent = new Intent(this, AccidentAlertDialogActivity.class);
+        dialogIntent.putExtra("lat", String.valueOf(uvLocation.getLatitude()));
+        dialogIntent.putExtra("lng", String.valueOf(uvLocation.getLongitude()));
+        dialogIntent.putExtra("speed", String.valueOf(uvSpeed));
+        dialogIntent.putExtra("g_force", g_force);
+        dialogIntent.putExtra("trip_id", tripId);
         dialogIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(dialogIntent);
     }
@@ -276,43 +288,35 @@ public class Speedometer extends Service implements LocationListener {
         mp.start();
     }
 
+
+
     // ====================================== LOCATION LISTENER ====================================
 
     // GPS location listener
     @Override
     public void onLocationChanged(Location location) {
-        float speed = location.getSpeed() * 18 / 5;
-        String speedStr = String.valueOf(speed);
 
-        uvLocation = location;
+        if (location != null) {
 
-        // Send driver location to server
-        updateLocation(location);
-        // Broadcast location to other activity
-        broadcastLocation(String.valueOf(location.getLatitude()), String.valueOf(location.getLongitude()));
+            // Get speed location.getSpeed() return meters/second 1mps = 3.6 kph
+            float mps = location.getSpeed();
+            double speed = mps * 3.6;
+            uvSpeed = speed;
+            String speedStr = String.valueOf(speed);
+            Toast.makeText(getApplicationContext(), "SPEED: "+ speedStr +" kph", Toast.LENGTH_SHORT).show();
 
-        if (prevLocation != null) {
-            long currentMillis = Calendar.getInstance().getTimeInMillis();
-            Log.d("DebugLog", "PREV MILLIS: " + String.valueOf(prevMillis));
-            Log.d("DebugLog", "CURRENT MILLIS: " + String.valueOf(currentMillis));
-            float distance = appUtil.getDistance(prevLocation, location);
-            Log.d("DebugLog", "DISTANCE: " + String.valueOf(distance));
-            float time = ((currentMillis - prevMillis)/60)/60;
-            Log.d("DebugLog", "(("+ String.valueOf(currentMillis) +"-"+ String.valueOf(prevMillis) +")/60)/60 = "+ String.valueOf(time));
-            Log.d("DebugLog", "TIME: " + String.valueOf(time));
-            float uvSpeed = distance/time;
-            Log.d("DebugLog", "SPPED: " + String.valueOf(uvSpeed));
 
-            Toast.makeText(getApplicationContext(), "SPEED: "+ String.valueOf(uvSpeed), Toast.LENGTH_SHORT).show();
-        }
-        prevLocation = location;
-        prevMillis = Calendar.getInstance().getTimeInMillis();
+            uvLocation = location;
+            updateLocation(location);
+            // Broadcast location to other activity
+            broadcastLocation(String.valueOf(location.getLatitude()), String.valueOf(location.getLongitude()));
 
-        // Check if Uv Express is overspeeding
-        if (speed > SPEED_LIMIT) {
-            speedStr = String.format("%.1f", Float.parseFloat(speedStr));
-            setOverSpeedDialog(speedStr);
-            reportSpeed(speedStr);
+            // Check if Uv Express is overspeeding
+            if (speed > SPEED_LIMIT) {
+                speedStr = String.format("%.1f", Float.parseFloat(speedStr));
+                setOverSpeedDialog(speedStr);
+                reportSpeed(speedStr);
+            }
         }
     }
 
@@ -329,5 +333,52 @@ public class Speedometer extends Service implements LocationListener {
     @Override
     public void onProviderDisabled(String provider) {
         Log.d("DebugLog", "GPS has been disabled!");
+    }
+
+    // =============================== ACCELEROMETER LISTENER AND FUNCTION =========================
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            getAccelerometerEvent(event);
+        }
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+    }
+
+    private void accidentAlertInterval() {
+        Timer timer = new Timer();
+        TimerTask timerTask = new TimerTask() {
+            @Override
+            public void run() {
+                if (accidentInterval == 0) {
+                    isAccidentAlertTriggered = false;
+                    accidentInterval = 30;
+                }
+                accidentInterval--;
+                accidentAlertInterval();
+            }
+        };
+        timer.schedule(timerTask, 1000);
+    }
+
+    private void getAccelerometerEvent(SensorEvent sensorEvent) {
+        float[] values = sensorEvent.values;
+        // Movement
+        float xAxis = values[0];
+        float yAxis = values[1];
+        float zAxis = values[2];
+
+        float acceleration = ((xAxis * xAxis) + (yAxis * yAxis) + (zAxis * zAxis)) / (SensorManager.GRAVITY_EARTH * SensorManager.GRAVITY_EARTH);
+        float gForce = acceleration/ (float) 9.80665;
+
+        // ((gForce > 19 && uvSpeed > 20) && !isAccidentAlertTriggered)
+        if ((gForce > 1 && uvSpeed > -1) && !isAccidentAlertTriggered) {
+            showAccidentAlert(String.valueOf(gForce));
+            isAccidentAlertTriggered = true;
+        }
     }
 }

@@ -102,7 +102,7 @@
                 android:id="@+id/btnOk"
                 android:layout_width="match_parent"
                 android:layout_height="40dp"
-                android:background="@color/color1"
+                android:background="@drawable/rec_shape_primary"
                 android:onClick="onBtnOvClick"
                 android:text="OK"
                 android:textColor="@color/formBackground" />

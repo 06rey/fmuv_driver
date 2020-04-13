@@ -36,7 +36,7 @@
                     android:orientation="vertical"/>
 
                 <TextView
-                    android:id="@+id/company"
+                    android:id="@+id/txtCompany"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_alignParentRight="false"
@@ -63,7 +63,7 @@
 
 
                 <TextView
-                    android:id="@+id/from"
+                    android:id="@+id/txtFrom"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@drawable/borderless"
@@ -126,7 +126,7 @@
 
 
                 <TextView
-                    android:id="@+id/to"
+                    android:id="@+id/txtTo"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@drawable/borderless"
@@ -147,175 +147,147 @@
                 android:id="@+id/details1Layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
                 android:orientation="vertical">
 
+                <!--Date-->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginLeft="5dp"
                     android:layout_marginTop="5dp"
-                    android:layout_marginBottom="3dp"
-                    android:gravity="left"
                     android:orientation="horizontal">
 
-                    <LinearLayout
+                    <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="5dp"
                         android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:text="Date"
+                        android:textColor="@color/darkGray"
+                        android:textStyle="bold" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif"
-                            android:paddingRight="5dp"
-                            android:text="Departure"
-                            android:textColor="@color/gray2"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
+                    <TextView
+                        android:id="@+id/txtDate"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="right"
+                        android:text="Nov 1, 2020"
+                        android:textColor="@color/superdarkgray"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
 
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal">
+                </LinearLayout>
+                <!--date-->
 
-                            <TextView
-                                android:id="@+id/date"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:fontFamily="sans-serif"
-                                android:text="Fri, Nov 20, 2019"
-                                android:textColor="@color/color1"
-                                android:textSize="18sp"
-                                android:textStyle="bold" />
+                <!--Departure-->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:orientation="horizontal">
 
-                            <TextView
-                                android:id="@+id/departure"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:fontFamily="sans-serif"
-                                android:text="12:30 PM"
-                                android:textColor="@color/darkOrange"
-                                android:textSize="18sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Departure Time"
+                        android:textColor="@color/darkGray"
+                        android:textStyle="bold" />
 
-                    </LinearLayout>
+                    <TextView
+                        android:id="@+id/txtDepart"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="right"
+                        android:text="2:30 PM"
+                        android:textColor="@color/superdarkgray"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+                <!--Departure-->
+
+                <!--Arrival-->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Arrival Time"
+                        android:textColor="@color/darkGray"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/txtArrive"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="right"
+                        android:text="2:30 PM"
+                        android:textColor="@color/superdarkgray"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+                <!--Arrival-->
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Plate No."
+                        android:textStyle="bold"
+                        android:textColor="@color/darkGray" />
+
+                    <TextView
+                        android:id="@+id/txtPlateNo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="right"
+                        android:text="HAC 0923"
+                        android:textColor="@color/superdarkgray"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
                 </LinearLayout>
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginLeft="5dp"
-                    android:layout_marginBottom="3dp"
-                    android:gravity="left"
+                    android:layout_marginTop="5dp"
                     android:orientation="horizontal">
 
-                    <LinearLayout
-                        android:layout_width="170dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif"
-                            android:paddingRight="5dp"
-                            android:text="Plate No.:"
-                            android:textColor="@color/gray2"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:id="@+id/plate"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif"
-                            android:text="TEMP 101010"
-                            android:textColor="@color/darkGray"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-
-                    </LinearLayout>
-
-                    <LinearLayout
+                    <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="10dp"
                         android:layout_weight="1"
-                        android:orientation="horizontal">
+                        android:text="No. of Passenger"
+                        android:textColor="@color/darkGray"
+                        android:textStyle="bold" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif"
-                            android:paddingRight="5dp"
-                            android:text="No. of Passenger: "
-                            android:textColor="@color/gray2"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:id="@+id/passNo"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif"
-                            android:text="6"
-                            android:textColor="@color/darkGray"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-
-                    </LinearLayout>
-                </LinearLayout>
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/btnLayout"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginLeft="5dp"
-                    android:layout_marginBottom="10dp"
-                    android:background="@color/header" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="5dp"
-                    android:layout_marginBottom="5dp"
-                    android:gravity="center"
-                    android:orientation="horizontal">
-
-                    <Button
-                        android:id="@+id/btnStart"
+                    <TextView
+                        android:id="@+id/txtNoPass"
                         android:layout_width="wrap_content"
-                        android:layout_height="40dp"
-                        android:layout_marginRight="5dp"
+                        android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:background="@drawable/rec_success"
-                        android:enabled="true"
-                        android:text="Start trip"
-                        android:textColor="@color/colorAccent" />
-
-                    <Button
-                        android:id="@+id/btnSeat"
-                        android:layout_width="wrap_content"
-                        android:layout_height="40dp"
-                        android:layout_marginLeft="5dp"
-                        android:layout_weight="1"
-                        android:background="@drawable/rec_shape_primary"
-                        android:enabled="true"
-                        android:text="Seating"
-                        android:textColor="@color/colorAccent" />
+                        android:gravity="right"
+                        android:text="9"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/superdarkgray" />
 
                 </LinearLayout>
 

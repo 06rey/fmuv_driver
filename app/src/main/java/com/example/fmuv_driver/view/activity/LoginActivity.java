@@ -119,7 +119,6 @@ public class LoginActivity extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable s) {
-
             }
         });
     }
@@ -136,7 +135,7 @@ public class LoginActivity extends AppCompatActivity {
                     if (list.get(0).get("msg").equals("already login")) {
                         AlertDialog.Builder alertBuilder = new AlertDialog.Builder(mContext, R.style.MyAlertDialogStyle);
                         alertBuilder.setTitle("Already Login")
-                                .setMessage("You already login from another device. If you wish to login to this device please logout from other device.")
+                                .setMessage("You already login from another device. If you wish to login to this device please logout_acc from other device.")
                                 .setPositiveButton("Logout from other device", new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialog, int which) {

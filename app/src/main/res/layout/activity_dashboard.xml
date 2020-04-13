@@ -1,31 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/appBackgroud"
     android:gravity="center"
     android:orientation="vertical">
 
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:scrollbars="horizontal">
 
-        <ImageView
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:background="@drawable/uv" />
+            android:layout_height="match_parent"
+            android:orientation="vertical">
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="2dp"
-            android:background="@color/color1" />
-
-        <ScrollView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:scrollbars="horizontal">
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:background="@drawable/uv" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -48,64 +44,56 @@
                     <LinearLayout
                         android:id="@+id/btnfuv"
                         android:layout_width="160dp"
-                        android:layout_height="match_parent"
+                        android:layout_height="160dp"
                         android:layout_marginRight="5dp"
                         android:layout_weight="1"
-                        android:background="@color/atoolBar2"
-                        android:gravity="right"
+                        android:background="@color/colorPrimaryDark"
+                        android:gravity="center"
                         android:onClick="onclickTripManager"
                         android:orientation="vertical"
                         android:paddingBottom="10dp">
 
+                        <ImageView
+                            android:layout_width="80dp"
+                            android:layout_height="84dp"
+                            app:srcCompat="@drawable/bus_white" />
+
                         <TextView
-                            android:layout_width="match_parent"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginLeft="10dp"
                             android:layout_marginTop="10dp"
-                            android:layout_marginRight="10dp"
-                            android:layout_marginBottom="30dp"
                             android:gravity="top|left"
                             android:text="Trip Manager"
                             android:textColor="@android:color/background_light"
-                            android:textSize="14sp" />
-
-                        <ImageView
-                            android:layout_width="wrap_content"
-                            android:layout_height="match_parent"
-                            android:layout_marginRight="15dp"
-                            android:layout_marginBottom="5dp"
-                            app:srcCompat="@drawable/bus_white" />
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
 
                     </LinearLayout>
 
                     <LinearLayout
                         android:id="@+id/btnbh"
                         android:layout_width="160dp"
-                        android:layout_height="match_parent"
+                        android:layout_height="160dp"
                         android:layout_weight="1"
                         android:background="@color/atoolBar2"
-                        android:gravity="right"
+                        android:gravity="center"
                         android:onClick="onClickTripHistory"
                         android:orientation="vertical">
 
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginLeft="10dp"
-                            android:layout_marginTop="10dp"
-                            android:layout_marginRight="10dp"
-                            android:layout_marginBottom="30dp"
-                            android:gravity="top|left"
-                            android:text="History"
-                            android:textColor="@android:color/background_light"
-                            android:textSize="14sp" />
-
                         <ImageView
-                            android:layout_width="wrap_content"
-                            android:layout_height="match_parent"
-                            android:layout_marginRight="15dp"
-                            android:layout_marginBottom="10dp"
+                            android:layout_width="80dp"
+                            android:layout_height="80dp"
                             app:srcCompat="@drawable/map_white" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:gravity="top|left"
+                            android:text="Job History"
+                            android:textColor="@android:color/background_light"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
 
                     </LinearLayout>
 
@@ -123,71 +111,62 @@
                     <LinearLayout
                         android:id="@+id/btnas"
                         android:layout_width="160dp"
-                        android:layout_height="match_parent"
+                        android:layout_height="160dp"
                         android:layout_marginRight="5dp"
                         android:layout_weight="1"
                         android:background="@color/atoolBar2"
-                        android:gravity="right"
+                        android:gravity="center"
                         android:onClick="accountClickListener"
                         android:orientation="vertical">
 
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginLeft="10dp"
-                            android:layout_marginTop="10dp"
-                            android:layout_marginRight="10dp"
-                            android:layout_marginBottom="30dp"
-                            android:gravity="top|left"
-                            android:text="Account"
-                            android:textColor="@android:color/background_light"
-                            android:textSize="14sp" />
-
                         <ImageView
+                            android:layout_width="80dp"
+                            android:layout_height="80dp"
+                            app:srcCompat="@drawable/account" />
+
+                        <TextView
                             android:layout_width="wrap_content"
-                            android:layout_height="match_parent"
-                            android:layout_marginRight="15dp"
-                            android:layout_marginBottom="10dp"
-                            app:srcCompat="@drawable/settingswhite" />
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:gravity="top|left"
+                            android:text="Account Setting"
+                            android:textColor="@android:color/background_light"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
 
                     </LinearLayout>
 
                     <LinearLayout
                         android:id="@+id/btnlog"
                         android:layout_width="160dp"
-                        android:layout_height="match_parent"
+                        android:layout_height="160dp"
                         android:layout_weight="1"
                         android:background="@color/atoolBar2"
-                        android:gravity="right"
+                        android:gravity="center"
                         android:onClick="logout"
                         android:orientation="vertical">
 
+                        <ImageView
+                            android:layout_width="80dp"
+                            android:layout_height="80dp"
+                            app:srcCompat="@drawable/logout_acc" />
+
                         <TextView
-                            android:layout_width="match_parent"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginLeft="10dp"
                             android:layout_marginTop="10dp"
-                            android:layout_marginRight="10dp"
-                            android:layout_marginBottom="30dp"
                             android:gravity="top|left"
                             android:text="Logout"
                             android:textColor="@android:color/background_light"
-                            android:textSize="14sp" />
-
-                        <ImageView
-                            android:layout_width="wrap_content"
-                            android:layout_height="match_parent"
-                            android:layout_marginRight="10dp"
-                            android:layout_marginBottom="10dp"
-                            app:srcCompat="@drawable/logout_white" />
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
 
                     </LinearLayout>
 
                 </LinearLayout>
 
 
-                </LinearLayout>
-
-        </ScrollView>
-    </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
 </LinearLayout>
